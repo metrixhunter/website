@@ -20,11 +20,12 @@ export default function BankDetails({ params }) {
   return (
     <main style={{ padding: '2rem' }}>
       <h1>{bankName}</h1>
-      <p>Welcome to {bankName}'s page. Customize this content!</p>
+      <p>Welcome to {bankName}'s page! Please verify your account details below.</p>
       <ClientComponent bankId={bankId} />
     </main>
   );
 }
+
 
 
 

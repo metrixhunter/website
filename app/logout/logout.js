@@ -1,11 +1,18 @@
-// /app/logout/logout.js
-
 const logout = () => {
-    // Clear session data (like user session, localStorage, cookies, etc.)
-    localStorage.removeItem('user'); // Example for localStorage
-  };
-  
-  export default logout;
+  // Clear localStorage data
+  localStorage.removeItem('user');
+
+  // If sessionStorage or cookies are involved, clear them as well
+  sessionStorage.clear(); // Example for clearing sessionStorage
+  document.cookie = ''; // Example for clearing cookies (if used)
+};
+
+export default logout;
+
+
+
+
+
   
 
   

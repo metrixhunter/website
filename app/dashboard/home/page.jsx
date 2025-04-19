@@ -1,4 +1,4 @@
-'use client'
+'use client';
 
 import { Card, CardContent, Button } from '@mui/material';
 import { useRouter } from 'next/navigation';
@@ -22,8 +22,8 @@ export default function DashboardHome() {
   const router = useRouter();
 
   const handleLogout = () => {
-    logout(); // Call logout utility to clear session
-    router.push('/app'); // Redirect to /app page after logout
+    logout(); // Call logout utility to clear session data
+    router.push('/'); // Redirect to the root route (`/`)
   };
 
   return (
@@ -31,23 +31,25 @@ export default function DashboardHome() {
       <h2 style={{ textAlign: 'center' }}>Welcome back, FinEdge User 👋</h2>
 
       <div style={{ textAlign: 'center', marginBottom: '1rem' }}>
-        <Button 
-          variant="contained" 
-          color="secondary" 
-          onClick={handleLogout} // Trigger handleLogout when clicking logout
+        <Button
+          variant="contained"
+          color="secondary"
+          onClick={handleLogout} // Trigger handleLogout for logout and redirect
         >
           Logout
         </Button>
       </div>
 
-      <div style={{
-        display: 'flex',
-        flexWrap: 'wrap', 
-        gap: '1rem', 
-        justifyContent: 'center',
-        margin: '2rem 0',
-        paddingBottom: '1rem',
-      }}>
+      <div
+        style={{
+          display: 'flex',
+          flexWrap: 'wrap',
+          gap: '1rem',
+          justifyContent: 'center',
+          margin: '2rem 0',
+          paddingBottom: '1rem',
+        }}
+      >
         {actions.map((action, idx) => (
           <Card key={idx} style={{ minWidth: '140px', textAlign: 'center', cursor: 'pointer' }}>
             <CardContent>
@@ -60,6 +62,8 @@ export default function DashboardHome() {
     </main>
   );
 }
+
+
 
 
 

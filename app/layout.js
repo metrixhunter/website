@@ -5,8 +5,8 @@ import { usePathname } from 'next/navigation'
 import './globals.css'
 
 export default function RootLayout({ children }) {
-  const pathname = usePathname()
-  const hideSidebar = pathname === '/login' || pathname === '/signup'
+  const pathname = usePathname();
+  const hideSidebar = pathname === '/login' || pathname === '/signup';
 
   return (
     <html lang="en">
@@ -15,5 +15,7 @@ export default function RootLayout({ children }) {
         <main style={{ flex: 1 }}>{children}</main>
       </body>
     </html>
-  )
+  );
 }
+
+

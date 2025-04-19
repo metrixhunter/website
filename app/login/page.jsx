@@ -12,13 +12,25 @@ export default function LoginPage() {
   const router = useRouter();
 
   const handleLogin = () => {
-    const storedUser = JSON.parse(localStorage.getItem('user'));
+    // Check if user data exists in localStorage
+    const storedUser = localStorage.getItem('user');
+    if (!storedUser) {
+      setMessage('No user data found. Please sign up first.');
+      return;
+    }
 
-    if (storedUser?.email === email && storedUser?.password === password) {
+    // Parse the stored user data
+    const parsedUser = JSON.parse(storedUser);
+
+    // Validate email and password
+    if (parsedUser.email === email && parsedUser.password === password) {
+      // Save login flag
+      localStorage.setItem('loggedIn', true);
+
       alert('Login successful!');
       router.push('/banks'); // Redirect to bank selection page
     } else {
-      setMessage('Invalid email or password.');
+      setMessage('Invalid email or password. Please try again.');
     }
   };
 
