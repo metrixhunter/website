@@ -1,8 +1,8 @@
 'use client';
 
-import { Card, CardContent, Button } from '@mui/material';
 import { useRouter } from 'next/navigation';
-import logout from '../../logout/logout'; // Import the logout utility
+import { Container, Typography, Button, Grid, Card, CardContent } from '@mui/material';
+import logout from '../../logout/logout'; // Import logout utility
 
 const actions = [
   { label: 'Pay', icon: '💸' },
@@ -22,46 +22,36 @@ export default function DashboardHome() {
   const router = useRouter();
 
   const handleLogout = () => {
-    logout(); // Call logout utility to clear session data
-    router.push('/'); // Redirect to the root route (`/`)
+    logout(); // Clears session data
+    router.push('/'); // Redirects to home
   };
 
   return (
-    <main style={{ padding: '1rem' }}>
-      <h2 style={{ textAlign: 'center' }}>Welcome back, FinEdge User 👋</h2>
+    <Container maxWidth="md" style={{ padding: '2rem', textAlign: 'center' }}>
+      <Typography variant="h4">Dashboard</Typography>
+      <Typography variant="body1">Welcome to your personal finance dashboard!</Typography>
 
-      <div style={{ textAlign: 'center', marginBottom: '1rem' }}>
-        <Button
-          variant="contained"
-          color="secondary"
-          onClick={handleLogout} // Trigger handleLogout for logout and redirect
-        >
-          Logout
-        </Button>
-      </div>
+      <Button variant="contained" color="secondary" style={{ marginTop: '1rem' }} onClick={handleLogout}>
+        Logout
+      </Button>
 
-      <div
-        style={{
-          display: 'flex',
-          flexWrap: 'wrap',
-          gap: '1rem',
-          justifyContent: 'center',
-          margin: '2rem 0',
-          paddingBottom: '1rem',
-        }}
-      >
+      <Grid container spacing={2} justifyContent="center" style={{ marginTop: '2rem' }}>
         {actions.map((action, idx) => (
-          <Card key={idx} style={{ minWidth: '140px', textAlign: 'center', cursor: 'pointer' }}>
-            <CardContent>
-              <div style={{ fontSize: '1.8rem' }}>{action.icon}</div>
-              <div style={{ marginTop: '0.5rem' }}>{action.label}</div>
-            </CardContent>
-          </Card>
+          <Grid item xs={6} sm={4} md={3} key={idx}>
+            <Card style={{ textAlign: 'center', cursor: 'pointer' }}>
+              <CardContent>
+                <Typography variant="h5">{action.icon}</Typography>
+                <Typography variant="body2">{action.label}</Typography>
+              </CardContent>
+            </Card>
+          </Grid>
         ))}
-      </div>
-    </main>
+      </Grid>
+    </Container>
   );
 }
+
+
 
 
 

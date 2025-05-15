@@ -1,16 +1,62 @@
+'use client';
+
+import { useState } from 'react';
+import Sidebar from '@/app/components/Sidebar';
+import { Container, Typography, TextField, Button, Paper, List, ListItem, ListItemText, Alert } from '@mui/material';
+
 export default function BudgetingPage() {
-    return (
-      <main>
-        <h1>Budgeting Basics</h1>
-        <p>Budgeting helps you keep track of your income and expenses. It ensures you’re not spending more than you earn and helps you plan for savings and emergencies.</p>
-        <ul>
-          <li>Track your monthly income</li>
-          <li>List your fixed and variable expenses</li>
-          <li>Set saving goals</li>
-          <li>Review your budget monthly</li>
-        </ul>
-      </main>
-    );
-  }
+  const [income, setIncome] = useState('');
+  const [expenses, setExpenses] = useState('');
+  const [savings, setSavings] = useState(null);
+  const [message, setMessage] = useState('');
+
+  const handleCalculate = () => {
+    if (!income || !expenses || isNaN(income) || isNaN(expenses)) {
+      setMessage('❌ Please enter valid numeric values.');
+      setSavings(null);
+      return;
+    }
+
+    const calculatedSavings = parseFloat(income) - parseFloat(expenses);
+    setSavings(calculatedSavings);
+    setMessage(calculatedSavings >= 0 ? '✅ You have savings left!' : '⚠️ You are overspending!');
+  };
+
+  return (
+    <div style={{ display: 'flex' }}>
+      <Sidebar /> {/* Sidebar is included here */}
+
+      <Container maxWidth="md" style={{ padding: '2rem' }}>
+        <Paper elevation={3} style={{ padding: '2rem', textAlign: 'center' }}>
+          <Typography variant="h4" gutterBottom>💰 Budgeting</Typography>
+          <Typography variant="body1">Master your finances with smart budgeting strategies.</Typography>
+
+          <List>
+            {["Track your monthly income", "List your fixed and variable expenses", "Set savings goals", "Review your budget monthly"].map((item) => (
+              <ListItem key={item}>
+                <ListItemText primary={item} />
+              </ListItem>
+            ))}
+          </List>
+
+          <Typography variant="h6" style={{ marginTop: '1rem' }}>Calculate Your Budget:</Typography>
+
+          <TextField label="Monthly Income" type="number" fullWidth margin="normal" value={income} onChange={(e) => setIncome(e.target.value)} />
+          <TextField label="Monthly Expenses" type="number" fullWidth margin="normal" value={expenses} onChange={(e) => setExpenses(e.target.value)} />
+
+          <Button variant="contained" color="primary" fullWidth style={{ marginTop: '1rem' }} onClick={handleCalculate}>Calculate Savings</Button>
+
+          {message && <Alert severity={savings >= 0 ? 'success' : 'warning'} style={{ marginTop: '1rem' }}>{message}</Alert>}
+
+          {savings !== null && <Typography variant="h6" style={{ marginTop: '1rem' }}>Remaining Savings: ₹{savings}</Typography>}
+        </Paper>
+      </Container>
+    </div>
+  );
+}
+
+
+
+
   
   

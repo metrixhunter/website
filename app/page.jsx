@@ -1,26 +1,30 @@
-'use client'
+'use client';
 
-import Link from 'next/link'
-import FinEdgeLogo from '@/app/components/FinEdgeLogo'
+import Sidebar from '@/app/components/Sidebar';
+import { Container, Typography, Button } from '@mui/material';
 
-export default function Home() {
+export default function HomePage() {
   return (
-    <div style={{ padding: '1rem' }}>
-      <FinEdgeLogo />
-      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginBottom: '1rem' }}>
-        <Link href="/login">
-          <button style={{ padding: '0.5rem 1rem', cursor: 'pointer' }}>Login</button>
-        </Link>
-        <Link href="/signup">
-          <button style={{ padding: '0.5rem 1rem', cursor: 'pointer' }}>Sign Up</button>
-        </Link>
-      </div>
+    <div style={{ display: 'flex' }}>
+      <Sidebar /> {/* Sidebar is now included */}
 
-      <h1>Welcome to 
-      Finedge</h1>
-      <p>Select an option from the sidebar for mastering basic financial skills.</p>
+      <Container maxWidth="md" style={{ padding: '2rem', textAlign: 'center' }}>
+        <Typography variant="h4"> 💸 Welcome to FinEdge</Typography>
+        <Typography variant="body1">
+          Manage your finances efficiently with smart tools and insights.
+        </Typography>
+
+        {/* Restoring Login/Signup Buttons */}
+        <div style={{ marginTop: '2rem', display: 'flex', gap: '1rem', justifyContent: 'center' }}>
+          <Button variant="contained" color="primary" href="/login">Login</Button>
+          <Button variant="contained" color="secondary" href="/signup">Sign Up</Button>
+        </div>
+      </Container>
     </div>
-  )
+  );
 }
+
+
+
 
 

@@ -1,44 +1,43 @@
-'use client'
+'use client';
 
-import { useRouter } from 'next/navigation'
+import { useRouter } from 'next/navigation';
+import { Container, Card, CardContent, Button, Typography, Grid } from '@mui/material';
 
 const banks = [
   { name: 'State Bank of India', id: 'sbi' },
   { name: 'HDFC Bank', id: 'hdfc' },
   { name: 'ICICI Bank', id: 'icici' },
   { name: 'Axis Bank', id: 'axis' }
-]
+];
 
 export default function BanksPage() {
-  const router = useRouter()
+  const router = useRouter();
 
   const handleBankClick = (id) => {
-    // Redirect to the bank details page
-    router.push(`/banks/${id}`)
-  }
+    router.push(`/banks/${id}`);
+  };
 
   return (
-    <main style={{ padding: '2rem' }}>
-      <h1>Select Your Bank</h1>
-      <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+    <Container maxWidth="md" style={{ padding: '2rem' }}>
+      <Typography variant="h4" gutterBottom textAlign="center">Select Your Bank</Typography>
+      
+      <Grid container spacing={2} justifyContent="center">
         {banks.map((bank) => (
-          <div 
-            key={bank.id} 
-            onClick={() => handleBankClick(bank.id)}
-            style={{
-              border: '1px solid #ccc',
-              borderRadius: '8px',
-              padding: '1rem',
-              cursor: 'pointer',
-              width: '200px',
-              textAlign: 'center'
-            }}>
-            {bank.name}
-          </div>
+          <Grid item xs={6} sm={4} md={3} key={bank.id}>
+            <Card style={{ textAlign: 'center', cursor: 'pointer' }}>
+              <CardContent>
+                <Typography variant="h6">{bank.name}</Typography>
+                <Button variant="contained" color="primary" fullWidth onClick={() => handleBankClick(bank.id)}>
+                  Select
+                </Button>
+              </CardContent>
+            </Card>
+          </Grid>
         ))}
-      </div>
-    </main>
-  )
+      </Grid>
+    </Container>
+  );
 }
+
 
 

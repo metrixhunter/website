@@ -1,13 +1,21 @@
-const logout = () => {
+export const logout = () => {
   // Clear localStorage data
   localStorage.removeItem('user');
+  localStorage.removeItem('loggedIn');
+  localStorage.removeItem('authToken');
 
-  // If sessionStorage or cookies are involved, clear them as well
-  sessionStorage.clear(); // Example for clearing sessionStorage
-  document.cookie = ''; // Example for clearing cookies (if used)
+  // Clear sessionStorage
+  sessionStorage.clear();
+
+  // Clear all cookies properly
+  document.cookie.split(";").forEach((cookie) => {
+    document.cookie = cookie.replace(/^ +/, "").replace(/=.*/, "=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/");
+  });
+
+  // Redirect to the homepage after logout
+  window.location.href = "/";
 };
 
-export default logout;
 
 
 

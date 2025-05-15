@@ -1,12 +1,13 @@
 import ClientComponent from './ClientComponent';
+import { Container, Typography } from '@mui/material';
+import { notFound } from 'next/navigation';
 
 export function generateStaticParams() {
-  const bankIds = ['sbi', 'hdfc', 'icici', 'axis']; // Replace with actual bank IDs
-  return bankIds.map((bankId) => ({ bankId }));
+  return ['sbi', 'hdfc', 'icici', 'axis'].map(bankId => ({ bankId }));
 }
 
 export default function BankDetails({ params }) {
-  const bankId = params.bankId;
+  const { bankId } = params;
 
   const bankNames = {
     sbi: 'State Bank of India',
@@ -15,16 +16,24 @@ export default function BankDetails({ params }) {
     axis: 'Axis Bank',
   };
 
-  const bankName = bankNames[bankId] || 'Your Bank';
+  if (!bankNames[bankId]) {
+    notFound(); // Redirects to Next.js 404 page if invalid bankId
+  }
 
   return (
-    <main style={{ padding: '2rem' }}>
-      <h1>{bankName}</h1>
-      <p>Welcome to {bankName}'s page! Please verify your account details below.</p>
+    <Container maxWidth="md" style={{ padding: '2rem' }}>
+      <Typography variant="h3">{bankNames[bankId]}</Typography>
+      <Typography variant="body1">
+        Welcome to {bankNames[bankId]}'s page! Please verify your account details below.
+      </Typography>
+
       <ClientComponent bankId={bankId} />
-    </main>
+    </Container>
   );
 }
+
+
+
 
 
 
