@@ -1,19 +1,19 @@
 'use client';
 
 import { useState } from 'react';
-import Sidebar from '@/app/components/Sidebar';
+
 import { Container, Typography, TextField, Button, Paper, List, ListItem, ListItemText, Alert } from '@mui/material';
 
 export default function BudgetingPage() {
   const [income, setIncome] = useState('');
   const [expenses, setExpenses] = useState('');
-  const [savings, setSavings] = useState(null);
+const [savings, setSavings] = useState(null);
   const [message, setMessage] = useState('');
 
   const handleCalculate = () => {
     if (!income || !expenses || isNaN(income) || isNaN(expenses)) {
       setMessage('❌ Please enter valid numeric values.');
-      setSavings(null);
+    setSavings(0); 
       return;
     }
 
@@ -24,7 +24,7 @@ export default function BudgetingPage() {
 
   return (
     <div style={{ display: 'flex' }}>
-      <Sidebar /> {/* Sidebar is included here */}
+      
 
       <Container maxWidth="md" style={{ padding: '2rem' }}>
         <Paper elevation={3} style={{ padding: '2rem', textAlign: 'center' }}>
@@ -49,11 +49,18 @@ export default function BudgetingPage() {
           {message && <Alert severity={savings >= 0 ? 'success' : 'warning'} style={{ marginTop: '1rem' }}>{message}</Alert>}
 
           {savings !== null && <Typography variant="h6" style={{ marginTop: '1rem' }}>Remaining Savings: ₹{savings}</Typography>}
+
+          {/* ✅ Added Budgeting Navigation Button */}
+          <Button variant="contained" color="secondary" fullWidth style={{ marginTop: '1.5rem' }} href="/budgeting">
+            📊 Learn More About Budgeting
+          </Button>
         </Paper>
       </Container>
     </div>
   );
 }
+
+
 
 
 

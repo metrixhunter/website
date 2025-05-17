@@ -1,4 +1,3 @@
-//app/components/Sidebar.jsx
 'use client';
 
 import { usePathname } from 'next/navigation';
@@ -15,7 +14,13 @@ const links = [
 export default function Sidebar() {
   const pathname = usePathname();
   const allowedPages = ['/page', '/budgeting', '/saving', '/safety', '/credit', '/investment'];
-  if (!allowedPages.includes(pathname)) return null; // Hide sidebar on other pages
+
+  // Debugging: Check if Sidebar should be rendered
+  console.log('Rendering Sidebar on:', pathname);
+
+  // 🔹 FIX: Use `.some()` to check if `pathname` **contains** allowed pages
+  const showSidebar = allowedPages.some((page) => pathname.includes(page));
+  if (!showSidebar) return null; // Hide sidebar on other pages
 
   return (
     <aside style={{ width: '250px', padding: '1rem', borderRight: '1px solid #ddd' }}>
@@ -32,3 +37,5 @@ export default function Sidebar() {
     </aside>
   );
 }
+
+

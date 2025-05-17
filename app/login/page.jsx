@@ -8,24 +8,23 @@ import FinEdgeLogo from '@/app/components/FinEdgeLogo';
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [message, setMessage] = useState('');
+  const [message, setMessage] = '';
   const [openSnackbar, setOpenSnackbar] = useState(false);
   const router = useRouter();
 
+  // ✅ Mock User Accounts (No Changes)
+  const mockUsers = [
+    { username: 'Kamla', email: 'kamladevi@gmail.com', password: 'saksham' },
+    { username: 'Rohan', email: 'rohansatyam@gmail.com', password: 'saksham' }
+  ];
+
   const handleLogin = () => {
-    const storedUser = localStorage.getItem('user');
-    
-    if (!storedUser) {
-      setMessage('No user data found. Please sign up first.');
-      setOpenSnackbar(true);
-      return;
-    }
+    const user = mockUsers.find((user) => user.email === email && user.password === password);
 
-    const parsedUser = JSON.parse(storedUser);
-
-    if (parsedUser.email === email && parsedUser.password === password) {
-      localStorage.setItem('loggedIn', true);
-      router.push('/banks');
+    if (user) {
+      localStorage.setItem('loggedIn', true); // ✅ Keeps your old feature
+      sessionStorage.setItem('username', user.username); // ✅ Stores username for dashboard
+      router.push('/banks'); // ✅ Redirects to `/banks` after login (Fixed!)
     } else {
       setMessage('Invalid email or password. Please try again.');
       setOpenSnackbar(true);
@@ -56,5 +55,8 @@ export default function LoginPage() {
     </Container>
   );
 }
+
+
+
 
 
