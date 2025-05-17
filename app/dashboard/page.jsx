@@ -85,7 +85,8 @@ export default function DashboardHome() {
 
       {/* Main Content */}
       <div style={{ marginLeft: sidebarOpen ? '260px' : '60px', width: '100%', transition: 'margin-left 0.3s ease' }}>
-        <Typography variant="h4">{sessionStorage.getItem('username')}</Typography>
+        <Typography variant="h4">{username}</Typography>
+
         <Typography variant="body1">Welcome to your personal finance dashboard!</Typography>
 
         <Button variant="contained" color="secondary" style={{ marginTop: '1rem' }} onClick={handleLogout}>
