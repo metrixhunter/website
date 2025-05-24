@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { TextField, Button, Typography, Container, Paper, Alert, Snackbar } from '@mui/material';
-
+import FinEdgeLogo from '@/app/components/FinEdgeLogo';
 export default function SignupPage() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -45,6 +45,7 @@ export default function SignupPage() {
   return (
     <Container maxWidth="xs" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
       <Paper elevation={3} style={{ padding: '2rem', width: '100%', textAlign: 'center' }}>
+        <FinEdgeLogo />
         <Typography variant="h5" gutterBottom>Sign Up</Typography>
 
         {success && <Alert severity="success">Signed up successfully! Redirecting...</Alert>}

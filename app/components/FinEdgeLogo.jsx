@@ -1,12 +1,18 @@
+'use client';
+
 import Image from 'next/image';
 
 export default function FinEdgeLogo() {
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
-    <img src="/logo.png" priority={String(true)} />
-      <span style={{ fontWeight: 'bold', fontSize: '2rem' }}>Finedge 💸</span>
-    </div>
+    <Image
+      src="/logo/logo.png" // ✅ Load logo from public/logo folder
+      alt="FinEdge Logo"
+      width={400} // Adjust as needed
+      height={400}
+      draggable="false" // Adjust as needed
+    />
   );
 }
+
 
   

@@ -39,3 +39,8 @@ body {
 .dark .text-primary {
   color: var(--foreground-dark);
 }
+
+/* ✅ Completely hides scrollbar */
+::-webkit-scrollbar {
+  display: none;
+}

@@ -7,7 +7,7 @@ import FinEdgeLogo from '@/app/components/FinEdgeLogo';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [password, setPassword] = useState(''); // ✅ FIXED HERE
   const [message, setMessage] = useState('');
   const [openSnackbar, setOpenSnackbar] = useState(false);
   const router = useRouter();
@@ -40,17 +40,49 @@ export default function LoginPage() {
   return (
     <Container
       maxWidth="xs"
-      style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', height: '100vh', padding: '1rem' }}
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'center',
+        alignItems: 'center',
+        height: '100vh',
+        padding: '1rem',
+        overflow: 'hidden', // ✅ Removes scrolling
+        scrollbarWidth: 'none', // ✅ Hides scrollbar for Firefox
+        msOverflowStyle: 'none', // ✅ Hides scrollbar for IE/Edge
+      }}
     >
-      <FinEdgeLogo />
-
+      <FinEdgeLogo /> {/* ✅ Enlarged logo */}
+      
       <Paper elevation={3} style={{ padding: '2rem', width: '100%', textAlign: 'center' }}>
         <Typography variant="h5" gutterBottom>Login</Typography>
 
-        <TextField label="Email" type="email" fullWidth margin="normal" value={email} onChange={(e) => setEmail(e.target.value)} required />
-        <TextField label="Password" type="password" fullWidth margin="normal" value={password} onChange={(e) => setPassword(e.target.value)} required />
+        <TextField
+          label="Email"
+          type="email"
+          fullWidth
+          margin="normal"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          required
+        />
+        <TextField
+          label="Password"
+          type="password"
+          fullWidth
+          margin="normal"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          required
+        />
 
-        <Button variant="contained" color="primary" fullWidth style={{ marginTop: '1rem' }} onClick={handleLogin}>
+        <Button
+          variant="contained"
+          color="primary"
+          fullWidth
+          style={{ marginTop: '1rem' }}
+          onClick={handleLogin}
+        >
           Log In
         </Button>
       </Paper>
@@ -61,10 +93,4 @@ export default function LoginPage() {
     </Container>
   );
 }
-
-
-
-
-
-
 
