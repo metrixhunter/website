@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { TextField, Button, Typography, Container, Paper, Alert, Snackbar } from '@mui/material';
 import FinEdgeLogo from '@/app/components/FinEdgeLogo';
+
 export default function SignupPage() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -13,7 +14,7 @@ export default function SignupPage() {
   const [openSnackbar, setOpenSnackbar] = useState(false);
   const router = useRouter();
 
-  const handleSignup = () => {
+  const handleSignup = async () => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
     if (!name || !email || !password || !emailRegex.test(email)) {
@@ -22,24 +23,26 @@ export default function SignupPage() {
       return;
     }
 
-    const newUser = { username: name, email, password };
+    try {
+      const res = await fetch('http://localhost:5000/api/auth/signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: name, email, password }),
+      });
 
-    let users = JSON.parse(localStorage.getItem('users')) || [];
+      const data = await res.json();
 
-    const userExists = users.some((user) => user.email === email);
-    if (userExists) {
-      setErrorMsg('Email already registered. Try logging in.');
+      if (!res.ok) {
+        setErrorMsg(data.message || 'Signup failed');
+        setOpenSnackbar(true);
+      } else {
+        setSuccess(true);
+        setTimeout(() => router.push('/login'), 2000);
+      }
+    } catch (err) {
+      setErrorMsg('Something went wrong. Please try again.');
       setOpenSnackbar(true);
-      return;
     }
-
-    users.push(newUser);
-    localStorage.setItem('users', JSON.stringify(users));
-    setSuccess(true);
-
-    setTimeout(() => {
-      router.push('/login');
-    }, 2000);
   };
 
   return (
@@ -65,5 +68,6 @@ export default function SignupPage() {
     </Container>
   );
 }
+
 
 

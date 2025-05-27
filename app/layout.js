@@ -21,7 +21,7 @@ export default function Layout({ children }) {
           {/* 🔹 Show only on financial pages */}
           {financialPages.includes(pathname) && (
             <>
-              {/* Three-Line Toggle Button */}
+              {/* Toggle Button */}
               <button
                 onClick={() => setShowFinanceButtons((prev) => !prev)}
                 style={{
@@ -34,7 +34,7 @@ export default function Layout({ children }) {
                 {showFinanceButtons ? '⬅' : '☰'}
               </button>
 
-              {/* Financial Navigation Buttons (Left Corner) */}
+              {/* Financial Navigation Buttons */}
               {showFinanceButtons && (
                 <div style={{
                   position: 'absolute', top: '60px', left: '10px',
@@ -90,7 +90,7 @@ export default function Layout({ children }) {
             </>
           )}
 
-          {/* 🔹 Main Content (Login/Signup only on `/`) */}
+          {/* 🔹 Main Content */}
           <main className="main-content" style={{ flexGrow: 1, padding: '2rem' }}>
             {pathname === '/' ? (
               <Container maxWidth="md" style={{ textAlign: 'center', padding: '2rem' }}>
@@ -99,17 +99,14 @@ export default function Layout({ children }) {
                   Securely manage your finances. Log in or sign up to get started.
                 </Typography>
 
-                {/* Redirect Notification */}
-                <Typography variant="h6" style={{ marginTop: '1rem' }}></Typography>
-                <p> <a href="/"></a>.</p>
-
-                {/* Button Group */}
+                {/* ✅ Fixed Routing for Signup */}
                 <div style={{ marginTop: '2rem', display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
                   <Button variant="contained" color="primary" href="/login">🔑 Login</Button>
                   <Button variant="contained" color="secondary" href="/signup">📝 Signup</Button>
+
                 </div>
               </Container>
-            ) : children} {/* ✅ Shows login/signup section only on `/` */}
+            ) : children}
           </main>
         </div>
       </body>

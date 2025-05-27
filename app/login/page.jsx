@@ -7,32 +7,49 @@ import FinEdgeLogo from '@/app/components/FinEdgeLogo';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState(''); // ✅ FIXED HERE
+  const [password, setPassword] = useState('');
   const [message, setMessage] = useState('');
   const [openSnackbar, setOpenSnackbar] = useState(false);
   const router = useRouter();
 
-  // ✅ Predefined users
+  // ✅ Hardcoded users
   const predefinedUsers = [
     { username: 'Kamla', email: 'kamladevi@gmail.com', password: 'saksham' },
-    { username: 'Rohan', email: 'rohansatyam@gmail.com', password: 'saksham' }
+    { username: 'Rohan', email: 'rohansatyam@gmail.com', password: 'saksham' },
   ];
 
-  const handleLogin = () => {
-    const storedUsers = JSON.parse(localStorage.getItem('users')) || [];
+  const handleLogin = async () => {
+    // ✅ Check against hardcoded users first
+    for (const user of predefinedUsers) {
+      if (user.email === email && user.password === password) {
+        localStorage.setItem('loggedIn', 'true');
+        sessionStorage.setItem('username', user.username);
+        router.push('/banks');
+        return;
+      }
+    }
 
-    // ✅ Combine predefined and stored users
-    const allUsers = [...predefinedUsers, ...storedUsers];
+    // ✅ Fallback: Check with backend
+    try {
+      const res = await fetch('http://localhost:5000/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
 
-    // ✅ Search for matching user
-    const user = allUsers.find((user) => user.email === email && user.password === password);
+      const data = await res.json();
 
-    if (user) {
+      if (!res.ok) {
+        setMessage(data.message || 'Login failed');
+        setOpenSnackbar(true);
+        return;
+      }
+
       localStorage.setItem('loggedIn', 'true');
-      sessionStorage.setItem('username', user.username);
+      sessionStorage.setItem('username', data.username); // returned by backend
       router.push('/banks');
-    } else {
-      setMessage('Invalid email or password. Please try again.');
+    } catch (err) {
+      setMessage('Something went wrong. Please try again.');
       setOpenSnackbar(true);
     }
   };
@@ -47,13 +64,12 @@ export default function LoginPage() {
         alignItems: 'center',
         height: '100vh',
         padding: '1rem',
-        overflow: 'hidden', // ✅ Removes scrolling
-        scrollbarWidth: 'none', // ✅ Hides scrollbar for Firefox
-        msOverflowStyle: 'none', // ✅ Hides scrollbar for IE/Edge
+        overflow: 'hidden',
+        scrollbarWidth: 'none',
+        msOverflowStyle: 'none',
       }}
     >
-      <FinEdgeLogo /> {/* ✅ Enlarged logo */}
-      
+      <FinEdgeLogo />
       <Paper elevation={3} style={{ padding: '2rem', width: '100%', textAlign: 'center' }}>
         <Typography variant="h5" gutterBottom>Login</Typography>
 
@@ -93,4 +109,5 @@ export default function LoginPage() {
     </Container>
   );
 }
+
 
