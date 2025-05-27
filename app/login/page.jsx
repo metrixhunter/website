@@ -12,14 +12,13 @@ export default function LoginPage() {
   const [openSnackbar, setOpenSnackbar] = useState(false);
   const router = useRouter();
 
-  // ✅ Hardcoded users
   const predefinedUsers = [
     { username: 'Kamla', email: 'kamladevi@gmail.com', password: 'saksham' },
     { username: 'Rohan', email: 'rohansatyam@gmail.com', password: 'saksham' },
   ];
 
   const handleLogin = async () => {
-    // ✅ Check against hardcoded users first
+    // Check against predefined users first
     for (const user of predefinedUsers) {
       if (user.email === email && user.password === password) {
         localStorage.setItem('loggedIn', 'true');
@@ -29,7 +28,7 @@ export default function LoginPage() {
       }
     }
 
-    // ✅ Fallback: Check with backend
+    // Fallback: Check with backend
     try {
       const res = await fetch('http://localhost:5000/api/auth/login', {
         method: 'POST',
@@ -46,10 +45,10 @@ export default function LoginPage() {
       }
 
       localStorage.setItem('loggedIn', 'true');
-      sessionStorage.setItem('username', data.username); // returned by backend
+      sessionStorage.setItem('username', data.username); // must be returned by backend
       router.push('/banks');
     } catch (err) {
-      setMessage('Something went wrong. Please try again.');
+      setMessage('Something went wrong. Please try again later.');
       setOpenSnackbar(true);
     }
   };
@@ -64,14 +63,13 @@ export default function LoginPage() {
         alignItems: 'center',
         height: '100vh',
         padding: '1rem',
-        overflow: 'hidden',
-        scrollbarWidth: 'none',
-        msOverflowStyle: 'none',
       }}
     >
       <FinEdgeLogo />
       <Paper elevation={3} style={{ padding: '2rem', width: '100%', textAlign: 'center' }}>
-        <Typography variant="h5" gutterBottom>Login</Typography>
+        <Typography variant="h5" gutterBottom>
+          Login
+        </Typography>
 
         <TextField
           label="Email"
@@ -103,7 +101,11 @@ export default function LoginPage() {
         </Button>
       </Paper>
 
-      <Snackbar open={openSnackbar} autoHideDuration={3000} onClose={() => setOpenSnackbar(false)}>
+      <Snackbar
+        open={openSnackbar}
+        autoHideDuration={4000}
+        onClose={() => setOpenSnackbar(false)}
+      >
         <Alert severity="error">{message}</Alert>
       </Snackbar>
     </Container>

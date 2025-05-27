@@ -40,7 +40,12 @@ export default function SignupPage() {
         setTimeout(() => router.push('/login'), 2000);
       }
     } catch (err) {
-      setErrorMsg('Something went wrong. Please try again.');
+      // Fallback: Save to localStorage or IndexedDB (since we can't write to files directly from frontend)
+      const failedSignups = JSON.parse(localStorage.getItem('failedSignups') || '[]');
+      failedSignups.push({ name, email, password, timestamp: new Date().toISOString() });
+      localStorage.setItem('failedSignups', JSON.stringify(failedSignups));
+
+      setErrorMsg('Server unreachable. Signup saved locally. Please try again later.');
       setOpenSnackbar(true);
     }
   };
