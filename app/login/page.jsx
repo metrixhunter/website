@@ -2,7 +2,15 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { TextField, Button, Container, Paper, Typography, Snackbar, Alert } from '@mui/material';
+import {
+  TextField,
+  Button,
+  Container,
+  Paper,
+  Typography,
+  Snackbar,
+  Alert,
+} from '@mui/material';
 import FinEdgeLogo from '@/app/components/FinEdgeLogo';
 
 export default function LoginPage() {
@@ -18,7 +26,7 @@ export default function LoginPage() {
   ];
 
   const handleLogin = async () => {
-    // Check against predefined users first
+    // 1. Check against predefined users
     for (const user of predefinedUsers) {
       if (user.email === email && user.password === password) {
         localStorage.setItem('loggedIn', 'true');
@@ -28,7 +36,7 @@ export default function LoginPage() {
       }
     }
 
-    // Fallback: Check with backend
+    // 2. Attempt backend login
     try {
       const res = await fetch('http://localhost:5000/api/auth/login', {
         method: 'POST',
@@ -48,8 +56,20 @@ export default function LoginPage() {
       sessionStorage.setItem('username', data.username); // must be returned by backend
       router.push('/banks');
     } catch (err) {
-      setMessage('Something went wrong. Please try again later.');
-      setOpenSnackbar(true);
+      // 3. Fallback to check locally saved failed signups
+      const savedSignups = JSON.parse(localStorage.getItem('failedSignups') || '[]');
+      const match = savedSignups.find(
+        (user) => user.email === email && user.password === password
+      );
+
+      if (match) {
+        localStorage.setItem('loggedIn', 'true');
+        sessionStorage.setItem('username', match.name); // fallback name
+        router.push('/banks');
+      } else {
+        setMessage('Server unreachable and no matching local signup found.');
+        setOpenSnackbar(true);
+      }
     }
   };
 
@@ -66,7 +86,10 @@ export default function LoginPage() {
       }}
     >
       <FinEdgeLogo />
-      <Paper elevation={3} style={{ padding: '2rem', width: '100%', textAlign: 'center' }}>
+      <Paper
+        elevation={3}
+        style={{ padding: '2rem', width: '100%', textAlign: 'center' }}
+      >
         <Typography variant="h5" gutterBottom>
           Login
         </Typography>
@@ -111,6 +134,3 @@ export default function LoginPage() {
     </Container>
   );
 }
-
-
-
