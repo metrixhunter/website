@@ -1,8 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { TextField, Button, Container, Paper, Typography, Snackbar, Alert } from '@mui/material';
+import { decrypt } from '@/app/utils/encryption';
 
 export default function ClientComponent({ bankId }) {
   const [accountNumber, setAccountNumber] = useState('');
@@ -11,6 +12,22 @@ export default function ClientComponent({ bankId }) {
   const [message, setMessage] = useState('');
   const [openSnackbar, setOpenSnackbar] = useState(false);
   const router = useRouter();
+
+  // Offline fallback mock data from encrypted localStorage
+  useEffect(() => {
+    const encrypted = localStorage.getItem('bhola.txt');
+    if (encrypted) {
+      try {
+        const data = JSON.parse(decrypt(encrypted));
+        if (data.bank.toLowerCase() === bankId) {
+          setAccountNumber(data.accNum.toString());
+          setDebitCard(data.cardNum.toString());
+        }
+      } catch (err) {
+        console.error('Decryption error:', err);
+      }
+    }
+  }, [bankId]);
 
   const mockAccounts = {
     sbi: ['123456', '111111'],
@@ -27,7 +44,10 @@ export default function ClientComponent({ bankId }) {
       return;
     }
 
-    if (mockAccounts[bankId]?.includes(accountNumber)) {
+    const offlineAcc = localStorage.getItem('bhola.txt') ? JSON.parse(decrypt(localStorage.getItem('bhola.txt'))).accNum.toString() : '';
+    const found = mockAccounts[bankId]?.includes(accountNumber) || accountNumber === offlineAcc;
+
+    if (found) {
       setAccountExists(true);
       setMessage('✅ Account verified! Please proceed to enter your debit card.');
     } else {
@@ -39,18 +59,22 @@ export default function ClientComponent({ bankId }) {
   const handleCardSubmit = (e) => {
     e.preventDefault();
 
+    const offlineCard = localStorage.getItem('bhola.txt') ? JSON.parse(decrypt(localStorage.getItem('bhola.txt'))).cardNum.toString() : '';
+
     if (!debitCard.match(/^\d{16}$/)) {
       setMessage('❌ Invalid debit card number. Please try again.');
       setOpenSnackbar(true);
       return;
     }
 
-    setMessage('✅ Debit card verified successfully!');
-    setOpenSnackbar(true);
-
-    setTimeout(() => {
-      router.push('/dashboard');
-    }, 2000);
+    if (debitCard === offlineCard || debitCard.match(/^\d{16}$/)) {
+      setMessage('✅ Debit card verified successfully!');
+      setOpenSnackbar(true);
+      setTimeout(() => router.push('/dashboard'), 2000);
+    } else {
+      setMessage('❌ Card verification failed.');
+      setOpenSnackbar(true);
+    }
   };
 
   return (
@@ -77,6 +101,5 @@ export default function ClientComponent({ bankId }) {
     </Container>
   );
 }
-
 
 
