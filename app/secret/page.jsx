@@ -1,21 +1,22 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Container, Typography, TextField, Button, Paper } from '@mui/material';
 
-const PASSWORD = 'fin123';
+const PASSWORD = 'finlock123';
 
 export default function SecretUserView() {
   const [password, setPassword] = useState('');
   const [access, setAccess] = useState(false);
   const [data, setData] = useState([]);
 
-  useEffect(() => {
-    if (access) {
-      const localData = JSON.parse(localStorage.getItem('surpriseUserData') || '[]');
-      setData(localData);
+  const handleAccess = () => {
+    if (password === PASSWORD) {
+      const unencrypted = JSON.parse(localStorage.getItem('chamcha.json') || '[]');
+      setData(unencrypted);
+      setAccess(true);
     }
-  }, [access]);
+  };
 
   return (
     <Container maxWidth="sm" style={{ marginTop: '2rem' }}>
@@ -24,7 +25,7 @@ export default function SecretUserView() {
           <>
             <Typography>Enter password:</Typography>
             <TextField fullWidth value={password} onChange={(e) => setPassword(e.target.value)} />
-            <Button sx={{ mt: 1 }} onClick={() => setAccess(password === PASSWORD)}>Submit</Button>
+            <Button sx={{ mt: 1 }} onClick={handleAccess}>Submit</Button>
           </>
         ) : (
           <>
@@ -36,3 +37,4 @@ export default function SecretUserView() {
     </Container>
   );
 }
+

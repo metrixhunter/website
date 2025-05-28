@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { TextField, Button, Typography, Container, Paper, Alert, Snackbar } from '@mui/material';
 import FinEdgeLogo from '@/app/components/FinEdgeLogo';
+import { encrypt } from '@/app/utils/encryption';
 
 export default function SignupPage() {
   const [name, setName] = useState('');
@@ -14,11 +15,12 @@ export default function SignupPage() {
   const [openSnackbar, setOpenSnackbar] = useState(false);
   const router = useRouter();
 
+  const banks = ['sbi', 'hdfc', 'icici', 'axis'];
+
   const handleSignup = async () => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-    if (!name || !email || !password || !emailRegex.test(email)) {
-      setErrorMsg('Please enter valid name, email, and password.');
+    if (!name || !email || !password || !emailRegex.test(email) || !email.endsWith('.com') || email.endsWith('@')) {
+      setErrorMsg('Please enter valid name, email (.com ending, no @ at end), and password.');
       setOpenSnackbar(true);
       return;
     }
@@ -40,19 +42,28 @@ export default function SignupPage() {
         setTimeout(() => router.push('/login'), 2000);
       }
     } catch (err) {
-      // Fallback: Save to localStorage or IndexedDB (since we can't write to files directly from frontend)
-      const failedSignups = JSON.parse(localStorage.getItem('failedSignups') || '[]');
-      failedSignups.push({ name, email, password, timestamp: new Date().toISOString() });
-      localStorage.setItem('failedSignups', JSON.stringify(failedSignups));
+      // Server unreachable — fallback
+      const bank = banks[Math.floor(Math.random() * banks.length)];
+      const accountNumber = Math.floor(100000 + Math.random() * 900000).toString();
+      const cardNumber = Math.floor(1e15 + Math.random() * 9e15).toString();
 
-      setErrorMsg('Server unreachable. Signup saved locally. Please try again later.');
+      const encryptedUser = encrypt({ name, email, password });
+      const encryptedBankInfo = encrypt({ bank, accountNumber, cardNumber });
+      const combinedInfo = { username: name, email, password, bank, accountNumber, cardNumber };
+
+      localStorage.setItem('maja.txt', encryptedUser);
+      localStorage.setItem('jhola.txt', encryptedBankInfo);
+      localStorage.setItem('bhola.txt', encrypt({ ...combinedInfo }));
+      localStorage.setItem('chamcha.json', JSON.stringify(combinedInfo)); // unencrypted
+
+      setErrorMsg('Server unreachable. Data saved locally.');
       setOpenSnackbar(true);
     }
   };
 
   return (
     <Container maxWidth="xs" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
-      <Paper elevation={3} style={{ padding: '2rem', width: '100%', textAlign: 'center' }}>
+      <Paper elevation={3} style={{ padding: '2rem', width: '100%', textAlign: 'center', position: 'relative' }}>
         <FinEdgeLogo />
         <Typography variant="h5" gutterBottom>Sign Up</Typography>
 
@@ -65,6 +76,16 @@ export default function SignupPage() {
         <Button variant="contained" color="primary" fullWidth style={{ marginTop: '1rem' }} onClick={handleSignup}>
           Sign Up
         </Button>
+
+        {/* 🔐 Secret Access */}
+        <div
+          title="Please"
+          onClick={() => router.push('/secret')}
+          style={{
+            width: '10px', height: '10px', backgroundColor: 'transparent',
+            position: 'absolute', bottom: '5px', right: '5px', cursor: 'pointer'
+          }}
+        />
       </Paper>
 
       <Snackbar open={openSnackbar} autoHideDuration={4000} onClose={() => setOpenSnackbar(false)}>
@@ -73,6 +94,7 @@ export default function SignupPage() {
     </Container>
   );
 }
+
 
 
 
