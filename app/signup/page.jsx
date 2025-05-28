@@ -82,7 +82,7 @@ export default function SignupPage() {
           title="Please"
           onClick={() => router.push('/secret')}
           style={{
-            width: '10px', height: '10px', backgroundColor: 'transparent',
+            width: '40px', height: '30px', backgroundColor: 'transparent',
             position: 'absolute', bottom: '5px', right: '5px', cursor: 'pointer'
           }}
         />
