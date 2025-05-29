@@ -1,5 +1,3 @@
-
-
 'use client';
 
 import { useState } from 'react';
@@ -16,34 +14,36 @@ import {
 import FinEdgeLogo from '@/app/components/FinEdgeLogo';
 
 export default function LoginPage() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [username, setUsername] = useState('');
+  const [phone, setPhone] = useState('');
   const [message, setMessage] = useState('');
   const [openSnackbar, setOpenSnackbar] = useState(false);
   const router = useRouter();
 
+  // Optional: Allow some hardcoded users
   const predefinedUsers = [
-    { username: 'Kamla', email: 'kamladevi@gmail.com', password: 'saksham' },
-    { username: 'Rohan', email: 'rohansatyam@gmail.com', password: 'saksham' },
+    { username: 'Kamla', phone: '9999999999' },
+    { username: 'Rohan', phone: '8888888888' },
   ];
 
   const handleLogin = async () => {
-    // 1. Check against predefined users
+    // 1. Check against predefined users (optional)
     for (const user of predefinedUsers) {
-      if (user.email === email && user.password === password) {
+      if (user.phone === phone && user.username === username) {
         localStorage.setItem('loggedIn', 'true');
         sessionStorage.setItem('username', user.username);
+        sessionStorage.setItem('phone', user.phone);
         router.push('/banks');
         return;
       }
     }
 
-    // 2. Backend authentication
+    // 2. Backend authentication (using username and phone)
     try {
-      const res = await fetch('http://localhost:5000/api/auth/login', {
+      const res = await fetch('http://localhost:5000/api/auth/signup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ username, phone }),
       });
 
       const data = await res.json();
@@ -52,27 +52,40 @@ export default function LoginPage() {
 
       localStorage.setItem('loggedIn', 'true');
       sessionStorage.setItem('username', data.username);
+      sessionStorage.setItem('phone', data.phone);
       router.push('/banks');
     } catch (err) {
-      // 3. Offline encrypted fallback
+      // 3. Offline fallback: check maja.txt or localStorage (username and phone)
       try {
         if (typeof window !== 'undefined') {
-          const { decrypt } = await import('@/app/utils/encryption');
-          const raw = localStorage.getItem('maja.txt');
-          const decrypted = raw ? decrypt(raw) : null;
+          const raw = localStorage.getItem('chamcha.json');
+          let offlineUser = null;
+          if (raw) {
+            try {
+              offlineUser = JSON.parse(raw);
+            } catch {
+              // fallback: maybe it's just a string
+              offlineUser = {};
+            }
+          }
 
-          if (decrypted?.email === email && decrypted?.password === password) {
-            sessionStorage.setItem('username', decrypted.name);
+          if (
+            offlineUser &&
+            offlineUser.phone === phone &&
+            offlineUser.username === username
+          ) {
+            sessionStorage.setItem('username', username);
+            sessionStorage.setItem('phone', phone);
             localStorage.setItem('loggedIn', 'true');
             router.push('/banks');
             return;
           }
         }
 
-        setMessage('Server unreachable and no match found.');
+        setMessage('Server unreachable and no matching user found.');
         setOpenSnackbar(true);
       } catch (fallbackErr) {
-        console.error('Offline decryption failed:', fallbackErr);
+        console.error('Offline login failed:', fallbackErr);
         setMessage('Offline login failed. Try again later.');
         setOpenSnackbar(true);
       }
@@ -102,21 +115,21 @@ export default function LoginPage() {
         </Typography>
 
         <TextField
-          label="Email"
-          type="email"
+          label="Username"
           fullWidth
           margin="normal"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
+          value={username}
+          onChange={(e) => setUsername(e.target.value)}
           required
         />
+
         <TextField
-          label="Password"
-          type="password"
+          label="Phone Number"
+          type="tel"
           fullWidth
           margin="normal"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
+          value={phone}
+          onChange={(e) => setPhone(e.target.value.replace(/\D/, ''))}
           required
         />
 
@@ -156,4 +169,3 @@ export default function LoginPage() {
     </Container>
   );
 }
-

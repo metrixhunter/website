@@ -8,7 +8,7 @@ const PASSWORD = 'finlock123';
 export default function ServerUserView() {
   const [password, setPassword] = useState('');
   const [access, setAccess] = useState(false);
-  const [data, setData] = useState([]);
+  const [data, setData] = useState(null);
   const [error, setError] = useState('');
 
   const handleAccess = async () => {
@@ -51,7 +51,11 @@ export default function ServerUserView() {
         ) : (
           <>
             <Typography variant="h6">Server User Data</Typography>
-            <pre>{JSON.stringify(data, null, 2)}</pre>
+            {data && data.length > 0 ? (
+              <pre style={{ maxHeight: 400, overflow: 'auto' }}>{JSON.stringify(data, null, 2)}</pre>
+            ) : (
+              <Typography>No users found.</Typography>
+            )}
           </>
         )}
       </Paper>

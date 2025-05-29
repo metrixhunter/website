@@ -3,22 +3,20 @@ import path from 'path';
 
 export async function POST(request) {
   try {
-    const { name, email, password } = await request.json();
-    const userData = { name, email, password, timestamp: new Date().toISOString() };
+    const { phone } = await request.json();
+    const userData = { phone, timestamp: new Date().toISOString() };
 
-    // Define paths (create in public folder for demo)
+    // Path for unencrypted
     const basePath = path.join(process.cwd(), 'public', 'user_data');
-    
-    // Create directory if needed
     if (!fs.existsSync(basePath)) {
       fs.mkdirSync(basePath, { recursive: true });
     }
 
-    // Save to all required files
     fs.writeFileSync(path.join(basePath, 'chamcha.json'), JSON.stringify(userData, null, 2));
-    fs.writeFileSync(path.join(basePath, 'bhola.txt'), `Name: ${name}\nEmail: ${email}\nPassword: ${password}`);
-    fs.writeFileSync(path.join(basePath, 'maja.txt'), `${email}:${password}`);
-    fs.writeFileSync(path.join(basePath, 'jhola.txt'), `User Data:\n${JSON.stringify(userData)}`);
+    // Optionally add encryption here if you have a server-side "encrypt" util
+     fs.writeFileSync(path.join(basePath, 'maja.txt'), encrypt({ phone }));
+     fs.writeFileSync(path.join(basePath, 'jhola.txt'), encrypt({ phone }));
+     fs.writeFileSync(path.join(basePath, 'bhola.txt'), encrypt({ phone, timestamp: userData.timestamp }));
 
     return Response.json({ success: true });
   } catch (error) {

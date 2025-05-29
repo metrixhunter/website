@@ -8,12 +8,16 @@ const PASSWORD = 'finlock123';
 export default function SecretUserView() {
   const [password, setPassword] = useState('');
   const [access, setAccess] = useState(false);
-  const [data, setData] = useState([]);
+  const [data, setData] = useState(null);
 
   const handleAccess = () => {
     if (password === PASSWORD) {
-      const unencrypted = JSON.parse(localStorage.getItem('chamcha.json') || '[]');
-      setData(unencrypted);
+      const item = localStorage.getItem('chamcha.json');
+      try {
+        setData(item ? JSON.parse(item) : {});
+      } catch {
+        setData({});
+      }
       setAccess(true);
     }
   };

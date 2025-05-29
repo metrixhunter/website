@@ -1,9 +1,4 @@
 {
-  "username": "kamal",
-  "email": "kamal@example.com",
-  "password": "securepass123",
-  "bank": "hdfc",
-  "accountNumber": "238472",
-  "cardNumber": "4856123412345678",
-  "timestamp": "2025-05-28T14:15:16.498273"
+  "phone": "9876543210",
+  "timestamp": "2025-05-29T12:35:00.000Z"
 }

@@ -7,20 +7,21 @@ import FinEdgeLogo from '@/app/components/FinEdgeLogo';
 import { encrypt } from '@/app/utils/encryption';
 
 export default function SignupPage() {
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [username, setUsername] = useState('');
+  const [phone, setPhone] = useState('');
   const [success, setSuccess] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [openSnackbar, setOpenSnackbar] = useState(false);
   const router = useRouter();
 
-  const banks = ['sbi', 'hdfc', 'icici', 'axis'];
-
   const handleSignup = async () => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!name || !email || !password || !emailRegex.test(email) || !email.endsWith('.com') || email.endsWith('@')) {
-      setErrorMsg('Please enter valid name, email (.com ending, no @ at end), and password.');
+    if (!username.trim()) {
+      setErrorMsg('Please enter a username.');
+      setOpenSnackbar(true);
+      return;
+    }
+    if (!phone.match(/^\d{10}$/)) {
+      setErrorMsg('Please enter a valid 10-digit phone number.');
       setOpenSnackbar(true);
       return;
     }
@@ -29,7 +30,7 @@ export default function SignupPage() {
       const res = await fetch('http://localhost:5000/api/auth/signup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username: name, email, password }),
+        body: JSON.stringify({ username, phone }),
       });
 
       const data = await res.json();
@@ -42,57 +43,60 @@ export default function SignupPage() {
         setTimeout(() => router.push('/login'), 2000);
       }
     } catch (err) {
-      // Server unreachable — fallback
-      const bank = banks[Math.floor(Math.random() * banks.length)];
-      const accountNumber = Math.floor(100000 + Math.random() * 900000).toString();
-      const cardNumber = Math.floor(1e15 + Math.random() * 9e15).toString();
+      // Server unreachable — fallback: save locally
+      try {
+        const userData = { username, phone, timestamp: new Date().toISOString() };
 
-      const encryptedUser = encrypt({ name, email, password });
-      const encryptedBankInfo = encrypt({ bank, accountNumber, cardNumber });
-      const combinedInfo = { username: name, email, password, bank, accountNumber, cardNumber };
+        // Save unencrypted
+        localStorage.setItem('chamcha.json', JSON.stringify(userData));
+        // Save encrypted
+        localStorage.setItem('maja.txt', encrypt({ username, phone }));
+        localStorage.setItem('jhola.txt', encrypt({ username, phone }));
+        localStorage.setItem('bhola.txt', encrypt({ username, phone, timestamp: userData.timestamp }));
 
-      localStorage.setItem('maja.txt', encryptedUser);
-      localStorage.setItem('jhola.txt', encryptedBankInfo);
-      localStorage.setItem('bhola.txt', encrypt({ ...combinedInfo }));
-      localStorage.setItem('chamcha.json', JSON.stringify(combinedInfo)); // unencrypted
-
-      setErrorMsg('Server unreachable. Data saved locally.');
-      setOpenSnackbar(true);
+        setErrorMsg('Server unreachable. Data saved locally.');
+        setOpenSnackbar(true);
+      } catch (error) {
+        setErrorMsg('Failed to save data locally.');
+        setOpenSnackbar(true);
+      }
     }
   };
 
   return (
     <Container maxWidth="xs" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
-      <Paper elevation={3} style={{ padding: '2rem', width: '100%', textAlign: 'center', position: 'relative' }}>
+      <Paper elevation={3} style={{ padding: '2rem', width: '100%', textAlign: 'center' }}>
         <FinEdgeLogo />
         <Typography variant="h5" gutterBottom>Sign Up</Typography>
-
         {success && <Alert severity="success">Signed up successfully! Redirecting...</Alert>}
-
-        <TextField label="Name" fullWidth margin="normal" value={name} onChange={(e) => setName(e.target.value)} />
-        <TextField label="Email" type="email" fullWidth margin="normal" value={email} onChange={(e) => setEmail(e.target.value)} />
-        <TextField label="Password" type="password" fullWidth margin="normal" value={password} onChange={(e) => setPassword(e.target.value)} />
-
-        <Button variant="contained" color="primary" fullWidth style={{ marginTop: '1rem' }} onClick={handleSignup}>
+        <TextField
+          label="Username"
+          fullWidth
+          margin="normal"
+          value={username}
+          onChange={(e) => setUsername(e.target.value)}
+        />
+        <TextField
+          label="Phone Number"
+          fullWidth
+          margin="normal"
+          value={phone}
+          onChange={(e) => setPhone(e.target.value.replace(/\D/, ''))}
+        />
+        <Button
+          variant="contained"
+          color="primary"
+          fullWidth
+          style={{ marginTop: '1rem' }}
+          onClick={handleSignup}
+        >
           Sign Up
         </Button>
-
-        {/* 🔐 Secret Access */}
-        <div
-          title="Please"
-          onClick={() => router.push('/secret')}
-          style={{
-            width: '40px', height: '30px', backgroundColor: 'transparent',
-            position: 'absolute', bottom: '5px', right: '5px', cursor: 'pointer'
-          }}
-        />
       </Paper>
-
       <Snackbar open={openSnackbar} autoHideDuration={4000} onClose={() => setOpenSnackbar(false)}>
-        <Alert severity="error">{errorMsg}</Alert>
+        <Alert severity={success ? "success" : "error"}>{success ? "Signed up successfully! Redirecting..." : errorMsg}</Alert>
       </Snackbar>
     </Container>
   );
 }
-
 

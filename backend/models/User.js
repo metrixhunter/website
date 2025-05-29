@@ -1,31 +1,23 @@
 import mongoose from 'mongoose';
-import bcrypt from 'bcryptjs';
 
 const userSchema = new mongoose.Schema({
   username: { type: String, required: true, trim: true },
-  email: {
+  phone: {
     type: String,
     required: true,
     unique: true,
-    lowercase: true,
     match: [
-      /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/,
-      'Invalid email'
+      /^\d{10}$/,
+      'Phone number must be a valid 10-digit number'
     ]
   },
-  password: { type: String, required: true, minlength: 6 },
   bank: { type: String }, // e.g. 'HDFC', 'ICICI', etc.
   accountNumber: { type: String }, // Add your own validation if needed
   debitCardNumber: { type: String }, // Add your own validation if needed
 }, { timestamps: true });
 
-userSchema.pre('save', async function(next) {
-  if (!this.isModified('password')) return next();
-  this.password = await bcrypt.hash(this.password, 12);
-  next();
-});
+// No password hashing needed anymore
 
-// The fix is here:
 const User = mongoose.models.User || mongoose.model('User', userSchema);
 
 export { User };

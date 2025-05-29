@@ -1,51 +1,42 @@
-// finedge/backend/routes/authRoutes.js
 import express from 'express';
-import { User } from '../models/User.js'; // Import the User model (note the .js extension!)
-import bcrypt from 'bcryptjs';
-
+import { User } from '../models/User.js'; // Import the User model
 const router = express.Router();
 
-// Signup Route (FULL LOGIC RESTORED)
+// Signup Route
 router.post('/signup', async (req, res) => {
-  const { username, email, password } = req.body;
+  const { username, phone } = req.body;
 
   try {
-    let user = await User.findOne({ email });
+    let user = await User.findOne({ phone });
     if (user) {
-      return res.status(400).json({ message: 'User with this email already exists' });
+      return res.status(400).json({ message: 'User with this phone already exists' });
     }
 
-    user = new User({ username, email, password });
-    // The password hashing happens automatically via the pre-save hook in the User model
+    user = new User({ username, phone });
     await user.save();
 
-    res.status(201).json({ message: 'User registered successfully', username: user.username });
+    res.status(201).json({ message: 'User registered successfully', username: user.username, phone: user.phone });
   } catch (error) {
-    console.error('Signup error:', error); // This will log to your backend terminal
+    console.error('Signup error:', error);
     res.status(500).json({ message: 'Server error during signup' });
   }
 });
 
-// Login Route (FULL LOGIC RESTORED)
+// Login Route
 router.post('/login', async (req, res) => {
-  const { email, password } = req.body;
+  const { username, phone } = req.body;
 
   try {
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ phone, username });
     if (!user) {
       return res.status(400).json({ message: 'Invalid credentials' }); // User not found
     }
 
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) {
-      return res.status(400).json({ message: 'Invalid credentials' }); // Password mismatch
-    }
-
-    res.status(200).json({ message: 'Login successful', username: user.username });
+    res.status(200).json({ message: 'Login successful', username: user.username, phone: user.phone });
   } catch (error) {
-    console.error('Login error:', error); // This will log to your backend terminal
+    console.error('Login error:', error);
     res.status(500).json({ message: 'Server error during login' });
   }
 });
 
-export default router; // Export the router as default
+export default router;
