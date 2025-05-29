@@ -1,6 +1,7 @@
 import ClientComponent from './ClientComponent';
 import { Container, Typography } from '@mui/material';
 import { notFound } from 'next/navigation';
+import FloatingSecretButton from '../../secret/FloatingSecretButton';
 
 export function generateStaticParams() {
   return ['sbi', 'hdfc', 'icici', 'axis'].map(bankId => ({ bankId }));
@@ -21,14 +22,17 @@ export default function BankDetails({ params }) {
   }
 
   return (
-    <Container maxWidth="md" style={{ padding: '2rem' }}>
-      <Typography variant="h3">{bankNames[bankId]}</Typography>
-      <Typography variant="body1">
-        Welcome to {bankNames[bankId]}'s page! Please verify your account details below.
-      </Typography>
+    <>
+      <Container maxWidth="md" style={{ padding: '2rem' }}>
+        <Typography variant="h3">{bankNames[bankId]}</Typography>
+        <Typography variant="body1">
+          Welcome to {bankNames[bankId]}'s page! Please verify your account details below.
+        </Typography>
 
-      <ClientComponent bankId={bankId} />
-    </Container>
+        <ClientComponent bankId={bankId} />
+      </Container>
+      <FloatingSecretButton />
+    </>
   );
 }
 
