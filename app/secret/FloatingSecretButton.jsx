@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Box, Fab, Popover, Typography, Modal } from '@mui/material';
 import VisibilityIcon from '@mui/icons-material/Visibility';
-import serveruserview from './serveruserview';
+import serveruserview from './Serveruserview';
 
 export default function FloatingSecretButton() {
   const [anchorEl, setAnchorEl] = useState(null);
