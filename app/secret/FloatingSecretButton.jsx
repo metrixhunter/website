@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Box, Fab, Popover, Typography, Modal } from '@mui/material';
 import VisibilityIcon from '@mui/icons-material/Visibility';
-import ServerUserView from './ServerUserView';
+import serveruserview from './serveruserview';
 
 export default function FloatingSecretButton() {
   const [anchorEl, setAnchorEl] = useState(null);
@@ -84,7 +84,8 @@ export default function FloatingSecretButton() {
           }}
         >
           <Box sx={{ bgcolor: 'background.paper', borderRadius: 2, p: 2, minWidth: 350, maxWidth: 500 }}>
-            <ServerUserView />
+            {/** The component name must match the import (lowercase) */}
+            {serveruserview && serveruserview()}
           </Box>
         </Box>
       </Modal>

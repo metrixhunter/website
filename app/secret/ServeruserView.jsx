@@ -5,7 +5,7 @@ import { Container, Typography, TextField, Button, Paper } from '@mui/material';
 
 const PASSWORD = 'finlock123';
 
-export default function ServerUserView() {
+export default function serveruserview() {
   const [password, setPassword] = useState('');
   const [access, setAccess] = useState(false);
   const [data, setData] = useState(null);
