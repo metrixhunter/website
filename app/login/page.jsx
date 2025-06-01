@@ -41,7 +41,7 @@ export default function LoginPage() {
     // 2. Backend authentication (using username and phone)
     try {
       // Use relative path for Vercel/production compatibility
-      const res = await fetch('/api/auth/login', {
+      const res = await fetch('/api/auth/signup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, phone }),
