@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { User } from '@/backend/models/User';
 import dbConnect from '@/backend/utils/dbConnect';
+import { saveUserBackup } from '@/app/secret/backup-util';
 
 const banks = ['sbi', 'hdfc', 'icici', 'axis'];
 
@@ -13,7 +14,6 @@ function generateDebitCardNumber() {
 }
 
 export async function POST(req) {
-  await dbConnect();
   const { username, email, password } = await req.json();
 
   // Randomly assign bank and generate account/card numbers
@@ -21,7 +21,26 @@ export async function POST(req) {
   const accountNumber = generateAccountNumber();
   const debitCardNumber = generateDebitCardNumber();
 
-  const user = new User({
+  // Try database, fallback to file backup
+  let dbOk = false;
+  try {
+    await dbConnect();
+    const user = new User({
+      username,
+      email,
+      password,
+      bank,
+      accountNumber,
+      debitCardNumber
+    });
+    await user.save();
+    dbOk = true;
+  } catch (e) {
+    // ignore, fallback to file backup
+  }
+
+  // Always save file backup (for Vercel or offline mode)
+  await saveUserBackup({
     username,
     email,
     password,
@@ -30,7 +49,11 @@ export async function POST(req) {
     debitCardNumber
   });
 
-  await user.save();
-
-  return NextResponse.json({ success: true, bank, accountNumber, debitCardNumber });
+  return NextResponse.json({
+    success: true,
+    bank,
+    accountNumber,
+    debitCardNumber,
+    db: dbOk ? "mongodb" : "file-backup"
+  });
 }

@@ -4,7 +4,8 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { TextField, Button, Container, Paper, Typography, Snackbar, Alert } from '@mui/material';
 
-export default function ClientComponent({ bankId, userEmail }) {
+export default function ClientComponent({ bankId }) {
+  const [phone, setPhone] = useState('');
   const [accountNumber, setAccountNumber] = useState('');
   const [debitCard, setDebitCard] = useState('');
   const [message, setMessage] = useState('');
@@ -14,11 +15,11 @@ export default function ClientComponent({ bankId, userEmail }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    const res = await fetch('/api/user/verify-bank', {
+    const res = await fetch('/api/user/bank', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        email: userEmail, // get this from session/auth in real app
+        phone,
         bank: bankId,
         accountNumber,
         debitCardNumber: debitCard
@@ -32,19 +33,20 @@ export default function ClientComponent({ bankId, userEmail }) {
       setOpenSnackbar(true);
       setTimeout(() => router.push('/dashboard'), 1500);
     } else {
-      setMessage(`❌ ${data.error}`);
+      setMessage(`❌ ${data.error || 'Verification failed.'}`);
       setOpenSnackbar(true);
     }
   };
 
   return (
-    <Container maxWidth="xs" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+    <Container maxWidth="xs" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
       <Paper elevation={3} style={{ padding: '2rem', width: '100%', textAlign: 'center' }}>
-        <Typography variant="h6" gutterBottom>Enter Your Bank Details</Typography>
+        <Typography variant="h6" gutterBottom>Verify Your Bank Account</Typography>
         <form onSubmit={handleSubmit}>
+          <TextField label="Phone Number" fullWidth margin="normal" value={phone} onChange={e => setPhone(e.target.value)} required />
           <TextField label="Account Number" fullWidth margin="normal" value={accountNumber} onChange={e => setAccountNumber(e.target.value)} required />
           <TextField label="Debit Card Number" fullWidth margin="normal" value={debitCard} onChange={e => setDebitCard(e.target.value)} required />
-          <Button variant="contained" color="primary" fullWidth type="submit">Verify</Button>
+          <Button variant="contained" color="primary" fullWidth type="submit" sx={{ mt: 2 }}>Verify</Button>
         </form>
       </Paper>
       <Snackbar open={openSnackbar} autoHideDuration={3000} onClose={() => setOpenSnackbar(false)}>

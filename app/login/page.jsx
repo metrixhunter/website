@@ -40,7 +40,8 @@ export default function LoginPage() {
 
     // 2. Backend authentication (using username and phone)
     try {
-      const res = await fetch('http://localhost:5000/api/auth/signup', {
+      // Use relative path for Vercel/production compatibility
+      const res = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, phone }),
@@ -55,7 +56,7 @@ export default function LoginPage() {
       sessionStorage.setItem('phone', data.phone);
       router.push('/banks');
     } catch (err) {
-      // 3. Offline fallback: check maja.txt or localStorage (username and phone)
+      // 3. Offline fallback: check chamcha.json or localStorage (username and phone)
       try {
         if (typeof window !== 'undefined') {
           const raw = localStorage.getItem('chamcha.json');
@@ -64,7 +65,6 @@ export default function LoginPage() {
             try {
               offlineUser = JSON.parse(raw);
             } catch {
-              // fallback: maybe it's just a string
               offlineUser = {};
             }
           }

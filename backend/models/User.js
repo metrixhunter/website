@@ -11,12 +11,10 @@ const userSchema = new mongoose.Schema({
       'Phone number must be a valid 10-digit number'
     ]
   },
-  bank: { type: String }, // e.g. 'HDFC', 'ICICI', etc.
-  accountNumber: { type: String }, // Add your own validation if needed
-  debitCardNumber: { type: String }, // Add your own validation if needed
+  bank: { type: String, required: true }, // Now required
+  accountNumber: { type: String, required: true }, // Now required
+  debitCardNumber: { type: String, required: true }, // Now required
 }, { timestamps: true });
-
-// No password hashing needed anymore
 
 const User = mongoose.models.User || mongoose.model('User', userSchema);
 

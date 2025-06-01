@@ -4,9 +4,9 @@ import dbConnect from '@/backend/utils/dbConnect';
 
 export async function POST(req) {
   await dbConnect();
-  const { email, bank, accountNumber, debitCardNumber } = await req.json();
+  const { phone, bank, accountNumber, debitCardNumber } = await req.json();
 
-  const user = await User.findOne({ email });
+  const user = await User.findOne({ phone });
   if (!user) {
     return NextResponse.json({ error: 'User not found' }, { status: 404 });
   }

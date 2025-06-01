@@ -4,5 +4,4 @@ export function generateStaticParams() {
 }
 
 
-
   
