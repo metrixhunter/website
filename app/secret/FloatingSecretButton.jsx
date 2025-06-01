@@ -1,10 +1,35 @@
 'use client';
 
 import { useState } from 'react';
-import { Box, Fab, Popover, Typography, Modal, Container, TextField, Button, Paper } from '@mui/material';
+import { Box, Fab, Popover, Typography, Modal, Paper, Button, TextField, Container, Tabs, Tab } from '@mui/material';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 
 const PASSWORD = 'finlock123';
+
+function LocalUserView() {
+  const [data, setData] = useState(null);
+
+  const loadData = () => {
+    if (typeof window !== 'undefined') {
+      const item = localStorage.getItem('chamcha.json');
+      try {
+        setData(item ? JSON.parse(item) : {});
+      } catch {
+        setData({});
+      }
+    }
+  };
+
+  // Load data on mount
+  useState(() => { loadData(); }, []);
+
+  return (
+    <>
+      <Typography variant="h6">Local User Backup</Typography>
+      <pre style={{ maxHeight: 400, overflow: 'auto' }}>{JSON.stringify(data, null, 2)}</pre>
+    </>
+  );
+}
 
 function ServerUserView() {
   const [password, setPassword] = useState('');
@@ -29,44 +54,39 @@ function ServerUserView() {
     }
   };
 
-  return (
-    <Container maxWidth="sm" style={{ marginTop: '2rem' }}>
-      <Paper style={{ padding: '2rem' }}>
-        {!access ? (
-          <>
-            <Typography>Enter password:</Typography>
-            <TextField
-              fullWidth
-              value={password}
-              type="password"
-              onChange={(e) => setPassword(e.target.value)}
-              sx={{ mb: 1 }}
-            />
-            <Button sx={{ mt: 1 }} onClick={handleAccess}>Submit</Button>
-            {error && (
-              <Typography color="error" sx={{ mt: 1 }}>
-                {error}
-              </Typography>
-            )}
-          </>
-        ) : (
-          <>
-            <Typography variant="h6">Server User Data</Typography>
-            {data && data.length > 0 ? (
-              <pre style={{ maxHeight: 400, overflow: 'auto' }}>{JSON.stringify(data, null, 2)}</pre>
-            ) : (
-              <Typography>No users found.</Typography>
-            )}
-          </>
-        )}
-      </Paper>
-    </Container>
+  return !access ? (
+    <>
+      <Typography>Enter password:</Typography>
+      <TextField
+        fullWidth
+        value={password}
+        type="password"
+        onChange={(e) => setPassword(e.target.value)}
+        sx={{ mb: 1 }}
+      />
+      <Button sx={{ mt: 1 }} onClick={handleAccess}>Submit</Button>
+      {error && (
+        <Typography color="error" sx={{ mt: 1 }}>
+          {error}
+        </Typography>
+      )}
+    </>
+  ) : (
+    <>
+      <Typography variant="h6">Server User Data</Typography>
+      {data && data.length > 0 ? (
+        <pre style={{ maxHeight: 400, overflow: 'auto' }}>{JSON.stringify(data, null, 2)}</pre>
+      ) : (
+        <Typography>No users found.</Typography>
+      )}
+    </>
   );
 }
 
 export default function FloatingSecretButton() {
   const [anchorEl, setAnchorEl] = useState(null);
   const [openModal, setOpenModal] = useState(false);
+  const [tab, setTab] = useState(0);
 
   const handlePopoverOpen = (event) => {
     setAnchorEl(event.currentTarget);
@@ -83,6 +103,10 @@ export default function FloatingSecretButton() {
 
   const handleModalClose = () => {
     setOpenModal(false);
+  };
+
+  const handleTabChange = (_, value) => {
+    setTab(value);
   };
 
   return (
@@ -143,7 +167,11 @@ export default function FloatingSecretButton() {
           }}
         >
           <Box sx={{ bgcolor: 'background.paper', borderRadius: 2, p: 2, minWidth: 350, maxWidth: 500 }}>
-            <ServerUserView />
+            <Tabs value={tab} onChange={handleTabChange} centered sx={{ mb: 2 }}>
+              <Tab label="Server" />
+              <Tab label="Local" />
+            </Tabs>
+            {tab === 0 ? <ServerUserView /> : <LocalUserView />}
           </Box>
         </Box>
       </Modal>
