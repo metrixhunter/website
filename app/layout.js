@@ -3,124 +3,159 @@
 import { useState } from 'react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { Button, Container, Typography } from '@mui/material';
+import { Container, Typography, Button, Box, Paper } from '@mui/material';
+import FinEdgeLogo from '@/app/components/FinEdgeLogo';
+import { ThemeProvider, useThemeContext } from '@/app/context/ThemeContext';
+import ThemePicker from '@/app/components/ThemePicker';
+import FooterFinancialNav from '@/app/components/FooterFinancialNav';
 import './globals.css';
 
-export default function Layout({ children }) {
-  const pathname = usePathname();
-  const [showFinanceButtons, setShowFinanceButtons] = useState(false);
+// Sidebar links for all financial pages
+const sidebarLinks = [
+  { href: '/', label: '🏠 Go to Main Page', color: '#222' },
+  { href: '/budgeting', label: '💰 Budgeting', color: '#004A99' },
+  { href: '/saving', label: '🏦 Saving', color: '#007B5E' },
+  { href: '/credit', label: '💳 Credit', color: '#D32F2F' },
+  { href: '/investment', label: '📈 Investment', color: '#388E3C' },
+  { href: '/safety', label: '🔒 Financial Safety', color: '#F57C00' }
+];
 
-  // ✅ List of pages where financial buttons should be visible
-  const financialPages = ['/', '/budgeting', '/saving', '/credit', '/investment', '/safety'];
+function FinanceSidebar({ show, setShow, pathname }) {
+  const isFinancialPage = sidebarLinks.some(link => link.href === pathname);
+
+  if (!isFinancialPage) return null;
+
+  return (
+    <>
+      {/* Toggle Button */}
+      <button
+        onClick={() => setShow((prev) => !prev)}
+        style={{
+          position: 'fixed', top: '20px', left: show ? '210px' : '10px',
+          padding: '10px', backgroundColor: '#333', color: '#fff',
+          border: 'none', borderRadius: '5px', cursor: 'pointer',
+          fontSize: '24px', transition: 'left 0.3s'
+        }}
+        aria-label="Toggle Finance Tools Sidebar"
+      >
+        {show ? '⬅' : '☰'}
+      </button>
+      {/* Side Bar */}
+      {show && (
+        <div style={{
+          position: 'fixed', top: '60px', left: '10px',
+          display: 'flex', flexDirection: 'column', gap: '1rem',
+          width: '200px', padding: '1rem', border: '1px solid #ddd',
+          backgroundColor: '#f9f9f9', borderRadius: '10px', zIndex: 1200
+        }}>
+          <h3 style={{ margin: 0, fontWeight: 700 }}>Finance Tools</h3>
+          {sidebarLinks.map(link => (
+            <Link href={link.href} key={link.href}>
+              <button style={{
+                padding: '10px', width: '100%',
+                backgroundColor: link.color, color: 'white', borderRadius: '5px', border: 'none'
+              }}>
+                {link.label}
+              </button>
+            </Link>
+          ))}
+        </div>
+      )}
+    </>
+  );
+}
+
+function MainPageContent() {
+  return (
+    <Box sx={{ position: 'relative' }}>
+      <Container maxWidth="md" sx={{ textAlign: 'center', pt: 6 }}>
+        <FinEdgeLogo style={{ width: 60, height: 60, margin: '0 auto' }} />
+        <Typography variant="h3" sx={{ mt: 2, mb: 2 }}>Welcome to FinEdge</Typography>
+        <Typography variant="h6" color="text.secondary" gutterBottom>
+          Securely manage your finances and unlock your financial potential with ease.
+        </Typography>
+        <Paper elevation={2} sx={{ p: 3, mt: 3, textAlign: 'left' }}>
+          <Typography paragraph>
+            <b>FinEdge</b> is your all-in-one financial companion—helping you budget, save, invest, and protect your wealth. 
+            Our platform is designed for everyone: whether you’re a student, professional, or retiree, you’ll find tools and guidance for smarter money management.
+          </Typography>
+          <Typography paragraph>
+            <b>Specialty:</b> FinEdge is powered by an <b>AI assistant</b> that provides:
+          </Typography>
+          {/* Fix the ul bug: do not nest ul in Typography with paragraph */}
+          <Box component="ul" sx={{ pl: 4, mb: 2 }}>
+            <li>Personalized savings advice</li>
+            <li>Basic financial knowledge</li>
+            <li>Guidance on money transfers within FinEdge</li>
+            <li>Explanations of how money works</li>
+            <li>And more—tailored for your needs!</li>
+          </Box>
+          <Typography paragraph>
+            <b>Get started by exploring our tools for budgeting, saving, investing, credit, and safety—from the links below or the sidebar.</b>
+          </Typography>
+        </Paper>
+      </Container>
+      <FooterFinancialNav links={[
+        { href: '/budgeting', label: '💰 Budgeting' },
+        { href: '/saving', label: '🏦 Saving' },
+        { href: '/investment', label: '📈 Investment' },
+        { href: '/credit', label: '💳 Credit' },
+        { href: '/safety', label: '🛡️ Safety' }
+      ]} />
+      <ThemePicker />
+    </Box>
+  );
+}
+
+export default function Layout({ children }) {
+  return (
+    <ThemeProvider>
+      <ThemedLayout>{children}</ThemedLayout>
+    </ThemeProvider>
+  );
+}
+
+function ThemedLayout({ children }) {
+  const pathname = usePathname();
+  const { bgImage } = useThemeContext();
+  const [showFinanceSidebar, setShowFinanceSidebar] = useState(false);
+
+  // Determine if sidebar should show on this page
+  const isFinancialPage = sidebarLinks.some(link => link.href === pathname);
 
   return (
     <html lang="en">
-      <body className="app-container">
-        <div style={{ display: 'flex', minHeight: '100vh' }}>
+      <body className="app-container" style={{
+        backgroundImage: bgImage ? `url(${bgImage})` : undefined,
+        backgroundSize: 'cover', backgroundAttachment: 'fixed'
+      }}>
+        <div style={{ display: 'flex', minHeight: '100vh', flexDirection: 'column' }}>
+          {/* Header */}
+          <Box sx={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', px: 3, py: 2 }}>
+            <Link href="/" style={{ display: 'flex', alignItems: 'center' }}>
+              <FinEdgeLogo style={{ width: 45, height: 45 }} />
+              <Typography variant="h5" sx={{ ml: 1, fontWeight: 'bold', color: '#004A99', fontFamily: 'inherit' }}>
+                FinEdge
+              </Typography>
+            </Link>
+            <Box>
+              <Button variant="text" href="/login" sx={{ mr: 1 }}>LOGIN</Button>
+              <Button variant="contained" color="secondary" href="/signup">SIGNUP</Button>
+            </Box>
+          </Box>
 
-          {/* 🔹 Show only on financial pages */}
-          {financialPages.includes(pathname) && (
-            <>
-              {/* Toggle Button */}
-              <button
-                onClick={() => setShowFinanceButtons((prev) => !prev)}
-                style={{
-                  position: 'absolute', top: '20px', left: showFinanceButtons ? '210px' : '10px',
-                  padding: '10px', backgroundColor: '#333', color: '#fff',
-                  border: 'none', borderRadius: '5px', cursor: 'pointer',
-                  fontSize: '24px', transition: 'left 0.3s ease-in-out'
-                }}
-              >
-                {showFinanceButtons ? '⬅' : '☰'}
-              </button>
+          {/* Finance Sidebar */}
+          <FinanceSidebar show={showFinanceSidebar} setShow={setShowFinanceSidebar} pathname={pathname} />
 
-              {/* Financial Navigation Buttons */}
-              {showFinanceButtons && (
-                <div style={{
-                  position: 'absolute', top: '60px', left: '10px',
-                  display: 'flex', flexDirection: 'column', gap: '1rem',
-                  width: '200px', padding: '1rem', border: '1px solid #ddd',
-                  backgroundColor: '#f9f9f9', borderRadius: '10px'
-                }}>
-                  <h3>Finance Tools</h3>
-                  <Link href="/">
-                    <button style={{
-                      padding: '10px', width: '100%', backgroundColor: '#222', color: 'white', borderRadius: '5px'
-                    }}>
-                      🏠 Go to Main Page
-                    </button>
-                  </Link>
-                  <Link href="/budgeting">
-                    <button style={{
-                      padding: '10px', width: '100%', backgroundColor: '#004A99', color: 'white', borderRadius: '5px'
-                    }}>
-                      💰 Budgeting
-                    </button>
-                  </Link>
-                  <Link href="/saving">
-                    <button style={{
-                      padding: '10px', width: '100%', backgroundColor: '#007B5E', color: 'white', borderRadius: '5px'
-                    }}>
-                      🏦 Saving
-                    </button>
-                  </Link>
-                  <Link href="/credit">
-                    <button style={{
-                      padding: '10px', width: '100%', backgroundColor: '#D32F2F', color: 'white', borderRadius: '5px'
-                    }}>
-                      💳 Credit
-                    </button>
-                  </Link>
-                  <Link href="/investment">
-                    <button style={{
-                      padding: '10px', width: '100%', backgroundColor: '#388E3C', color: 'white', borderRadius: '5px'
-                    }}>
-                      📈 Investment
-                    </button>
-                  </Link>
-                  <Link href="/safety">
-                    <button style={{
-                      padding: '10px', width: '100%', backgroundColor: '#F57C00', color: 'white', borderRadius: '5px'
-                    }}>
-                      🔒 Financial Safety
-                    </button>
-                  </Link>
-                </div>
-              )}
-            </>
-          )}
-
-          {/* 🔹 Main Content */}
+          {/* Main Content */}
           <main className="main-content" style={{ flexGrow: 1, padding: '2rem' }}>
-            {pathname === '/' ? (
-              <Container maxWidth="md" style={{ textAlign: 'center', padding: '2rem' }}>
-                <Typography variant="h4"> 💸 Welcome to FinEdge</Typography>
-                <Typography variant="body1">
-                  Securely manage your finances. Log in or sign up to get started.
-                </Typography>
-
-                {/* ✅ Fixed Routing for Signup */}
-                <div style={{ marginTop: '2rem', display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
-                  <Button variant="contained" color="primary" href="/login">🔑 Login</Button>
-                  <Button variant="contained" color="secondary" href="/signup">📝 Signup</Button>
-
-                </div>
-              </Container>
-            ) : children}
+            {pathname === '/' ? <MainPageContent /> : children}
           </main>
         </div>
       </body>
     </html>
   );
 }
-
-
-
-
-
-
-
-
 
 
 

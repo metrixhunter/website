@@ -29,6 +29,7 @@
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
     "@types/bun": "latest",
+    "gh-pages": "^6.3.0",
     "tailwindcss": "^4"
   },
   "peerDependencies": {
