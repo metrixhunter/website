@@ -19,7 +19,6 @@ import {
 import FinEdgeLogo from '@/app/components/FinEdgeLogo';
 import { encrypt } from '@/app/utils/encryption';
 
-// Pre-defined ITU country codes (add/remove as needed)
 const countryCodes = [
   { code: '+91', label: 'India (+91)' },
   { code: '+1', label: 'USA (+1)' },
@@ -39,6 +38,17 @@ export default function SignupPage() {
   const [errorMsg, setErrorMsg] = useState('');
   const [openSnackbar, setOpenSnackbar] = useState(false);
   const router = useRouter();
+
+  const redirectAfterSignup = () => {
+    const bank = sessionStorage.getItem('bank');
+    const accountNumber = sessionStorage.getItem('accountNumber');
+    const debitCardNumber = sessionStorage.getItem('debitCardNumber');
+    if (bank && accountNumber && debitCardNumber) {
+      router.push('/accountfound');
+    } else {
+      router.push('/dashboard');
+    }
+  };
 
   const handleSignup = async () => {
     if (!username.trim()) {
@@ -71,7 +81,13 @@ export default function SignupPage() {
         setOpenSnackbar(true);
       } else {
         setSuccess(true);
-        setTimeout(() => router.push('/login'), 2000);
+        // Simulate bank assignment (in real app, these come from backend)
+        if (data.bank && data.accountNumber && data.debitCardNumber) {
+          sessionStorage.setItem('bank', data.bank);
+          sessionStorage.setItem('accountNumber', data.accountNumber);
+          sessionStorage.setItem('debitCardNumber', data.debitCardNumber);
+        }
+        setTimeout(() => redirectAfterSignup(), 2000);
       }
     } catch (err) {
       // Server unreachable — fallback: save locally
@@ -84,7 +100,7 @@ export default function SignupPage() {
 
         setErrorMsg('Server unreachable. Data saved locally.');
         setOpenSnackbar(true);
-        setTimeout(() => router.push('/dashboard'), 2000); // Redirect to dashboard after 2s
+        setTimeout(() => redirectAfterSignup(), 2000);
       } catch (error) {
         setErrorMsg('Failed to save data locally.');
         setOpenSnackbar(true);

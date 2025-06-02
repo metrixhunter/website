@@ -18,7 +18,6 @@ import {
 } from '@mui/material';
 import FinEdgeLogo from '@/app/components/FinEdgeLogo';
 
-// Pre-defined ITU country codes (add/remove as needed)
 const countryCodes = [
   { code: '+91', label: 'India (+91)' },
   { code: '+1', label: 'USA (+1)' },
@@ -38,11 +37,21 @@ export default function LoginPage() {
   const [openSnackbar, setOpenSnackbar] = useState(false);
   const router = useRouter();
 
-  // Optional: Allow some hardcoded users
   const predefinedUsers = [
     { username: 'Kamla', phone: '9999999999', countryCode: '+91' },
     { username: 'Rohan', phone: '8888888888', countryCode: '+91' },
   ];
+
+  const redirectAfterLogin = () => {
+    const bank = sessionStorage.getItem('bank');
+    const accountNumber = sessionStorage.getItem('accountNumber');
+    const debitCardNumber = sessionStorage.getItem('debitCardNumber');
+    if (bank && accountNumber && debitCardNumber) {
+      router.push('/accountfound');
+    } else {
+      router.push('/dashboard');
+    }
+  };
 
   const handleLogin = async () => {
     // 1. Check against predefined users (optional)
@@ -56,7 +65,7 @@ export default function LoginPage() {
         sessionStorage.setItem('username', user.username);
         sessionStorage.setItem('phone', user.phone);
         sessionStorage.setItem('countryCode', user.countryCode);
-        router.push('/banks');
+        redirectAfterLogin();
         return;
       }
     }
@@ -77,9 +86,15 @@ export default function LoginPage() {
       sessionStorage.setItem('username', data.username);
       sessionStorage.setItem('phone', data.phone);
       sessionStorage.setItem('countryCode', data.countryCode);
-      router.push('/banks');
+      // If bank info present (simulate for demo), set it
+      if (data.bank && data.accountNumber && data.debitCardNumber) {
+        sessionStorage.setItem('bank', data.bank);
+        sessionStorage.setItem('accountNumber', data.accountNumber);
+        sessionStorage.setItem('debitCardNumber', data.debitCardNumber);
+      }
+      redirectAfterLogin();
     } catch (err) {
-      // 3. Offline fallback: check chamcha.json or localStorage (username, phone, countryCode)
+      // 3. Offline fallback
       try {
         if (typeof window !== 'undefined') {
           const raw = localStorage.getItem('chamcha.json');
@@ -101,8 +116,7 @@ export default function LoginPage() {
             sessionStorage.setItem('username', username);
             sessionStorage.setItem('phone', phone);
             sessionStorage.setItem('countryCode', countryCode);
-            localStorage.setItem('loggedIn', 'true');
-            router.push('/banks');
+            redirectAfterLogin();
             return;
           }
         }
@@ -110,7 +124,6 @@ export default function LoginPage() {
         setMessage('Server unreachable and no matching user found.');
         setOpenSnackbar(true);
       } catch (fallbackErr) {
-        console.error('Offline login failed:', fallbackErr);
         setMessage('Offline login failed. Try again later.');
         setOpenSnackbar(true);
       }
