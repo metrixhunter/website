@@ -6,7 +6,7 @@ import path from 'path';
 const router = express.Router();
 
 // List of banks
-const banks = ['SBI', 'HDFC', 'ICICI', 'AXIS', '', '', '', ''];
+const banks = ['SBI', 'HDFC', 'ICICI', 'AXIS', ];
 
 // List of ITU country codes (add/remove as needed)
 const countryCodes = ['+91', '+1', '+44', '+81', '+61', '+49', '+971', '+86'];
