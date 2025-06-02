@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Container,
@@ -9,19 +9,28 @@ import {
   Button,
   Box,
   TextField,
-  CircularProgress
+  CircularProgress,
 } from '@mui/material';
 
 export default function OtpPage() {
   const [otp, setOtp] = useState('');
   const [loading, setLoading] = useState(false);
+  const [phone, setPhone] = useState('');
+  const [countryCode, setCountryCode] = useState('');
+  const [hydrated, setHydrated] = useState(false);
   const router = useRouter();
 
-  // For demonstration, get phone from session
-  const phone = sessionStorage.getItem('phone');
-  const countryCode = sessionStorage.getItem('countryCode');
+  useEffect(() => {
+    // Only run on client-side
+    setHydrated(true);
+    const storedPhone = typeof window !== 'undefined' ? sessionStorage.getItem('phone') : '';
+    const storedCountryCode = typeof window !== 'undefined' ? sessionStorage.getItem('countryCode') : '';
+    setPhone(storedPhone || '');
+    setCountryCode(storedCountryCode || '');
+  }, []);
 
-  // Mask phone for privacy
+  if (!hydrated) return null; // Don't render on SSR
+
   const maskedPhone =
     phone
       ? `${countryCode} ${phone.substring(0, 2)}******${phone.substring(8)}`
@@ -31,7 +40,6 @@ export default function OtpPage() {
     setLoading(true);
     setTimeout(() => {
       setLoading(false);
-      // On OTP success, go to banks or home
       router.replace('/banks');
     }, 1000);
   };
@@ -46,14 +54,14 @@ export default function OtpPage() {
           {maskedPhone}
         </Typography>
         <Box display="flex" justifyContent="center" gap={1} mb={2}>
-          {[0,1,2,3].map(i => (
+          {[0, 1, 2, 3].map((i) => (
             <TextField
               key={i}
               value={otp[i] || ''}
               inputProps={{ maxLength: 1, style: { textAlign: 'center', fontSize: 24, width: 40 } }}
-              onChange={e => {
+              onChange={(e) => {
                 const val = e.target.value.replace(/\D/, '');
-                setOtp(prev => (prev.substring(0, i) + val + prev.substring(i + 1)));
+                setOtp((prev) => (prev.substring(0, i) + val + prev.substring(i + 1)));
               }}
               sx={{ width: 50 }}
             />
