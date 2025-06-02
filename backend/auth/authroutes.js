@@ -6,7 +6,7 @@ import path from 'path';
 const router = express.Router();
 
 // List of banks
-const banks = ['SBI', 'HDFC', 'ICICI', 'AXIS', ];
+const banks = ['SBI', 'HDFC', 'ICICI', 'AXIS'];
 
 // List of ITU country codes (add/remove as needed)
 const countryCodes = ['+91', '+1', '+44', '+81', '+61', '+49', '+971', '+86'];
@@ -45,7 +45,7 @@ function backupUserData(userData) {
 
 // Signup Route
 router.post('/signup', async (req, res) => {
-  const { username, phone } = req.body;
+  const { username, phone, countryCode } = req.body;
 
   try {
     let user = await User.findOne({ phone });
@@ -53,8 +53,17 @@ router.post('/signup', async (req, res) => {
       return res.status(400).json({ message: 'User with this phone already exists' });
     }
 
-    // Assign country code randomly
-    const countryCode = countryCodes[Math.floor(Math.random() * countryCodes.length)];
+    // Validation for required fields and country code
+    if(!username || !phone || !countryCode) {
+      return res.status(400).json({ message: 'All fields are required' });
+    }
+    if (!countryCodes.includes(countryCode)) {
+      return res.status(400).json({ message: 'Invalid country code' });
+    }
+    if (!/^\d{10}$/.test(phone)) {
+      return res.status(400).json({ message: 'Phone number must be a valid 10-digit number' });
+    }
+
     const bank = banks[Math.floor(Math.random() * banks.length)];
     const accountNumber = generateAccountNumber();
     const debitCardNumber = generateDebitCardNumber();
@@ -84,6 +93,9 @@ router.post('/login', async (req, res) => {
   const { username, phone } = req.body;
 
   try {
+    if (!username || !phone) {
+      return res.status(400).json({ message: 'Username and phone are required' });
+    }
     const user = await User.findOne({ phone, username });
     if (!user) {
       return res.status(400).json({ message: 'Invalid credentials' });
