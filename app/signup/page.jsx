@@ -2,7 +2,20 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { TextField, Button, Typography, Container, Paper, Alert, Snackbar, MenuItem, Select, InputLabel, FormControl } from '@mui/material';
+import {
+  TextField,
+  Button,
+  Typography,
+  Container,
+  Paper,
+  Alert,
+  Snackbar,
+  MenuItem,
+  Select,
+  InputLabel,
+  FormControl,
+  Box,
+} from '@mui/material';
 import FinEdgeLogo from '@/app/components/FinEdgeLogo';
 import { encrypt } from '@/app/utils/encryption';
 
@@ -71,6 +84,7 @@ export default function SignupPage() {
 
         setErrorMsg('Server unreachable. Data saved locally.');
         setOpenSnackbar(true);
+        setTimeout(() => router.push('/dashboard'), 2000); // Redirect to dashboard after 2s
       } catch (error) {
         setErrorMsg('Failed to save data locally.');
         setOpenSnackbar(true);
@@ -93,28 +107,31 @@ export default function SignupPage() {
           onChange={(e) => setUsername(e.target.value)}
         />
 
-        <FormControl fullWidth margin="normal">
-          <InputLabel id="country-code-label">Country Code</InputLabel>
-          <Select
-            labelId="country-code-label"
-            id="country-code"
-            value={countryCode}
-            label="Country Code"
-            onChange={e => setCountryCode(e.target.value)}
-          >
-            {countryCodes.map((option) => (
-              <MenuItem value={option.code} key={option.code}>{option.label}</MenuItem>
-            ))}
-          </Select>
-        </FormControl>
-
-        <TextField
-          label="Phone Number"
-          fullWidth
-          margin="normal"
-          value={phone}
-          onChange={(e) => setPhone(e.target.value.replace(/\D/, ''))}
-        />
+        <Box display="flex" gap={1} alignItems="center">
+          <FormControl sx={{ minWidth: 100 }}>
+            <InputLabel id="country-code-label">Code</InputLabel>
+            <Select
+              labelId="country-code-label"
+              id="country-code"
+              value={countryCode}
+              label="Code"
+              onChange={e => setCountryCode(e.target.value)}
+              size="small"
+            >
+              {countryCodes.map((option) => (
+                <MenuItem value={option.code} key={option.code}>{option.label}</MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+          <TextField
+            label="Phone Number"
+            fullWidth
+            margin="normal"
+            value={phone}
+            onChange={(e) => setPhone(e.target.value.replace(/\D/, ''))}
+            sx={{ flex: 1 }}
+          />
+        </Box>
 
         <Button
           variant="contained"
