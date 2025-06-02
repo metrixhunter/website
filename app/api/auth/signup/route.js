@@ -17,7 +17,7 @@ export async function POST(req) {
   const { username, phone } = await req.json();
 
   // Assign country code and bank randomly
-  const countryCode = countryCodes[Math.floor(Math.random() * countryCodes.length)];
+ 
   const bank = banks[Math.floor(Math.random() * banks.length)];
   const accountNumber = generateAccountNumber();
   const debitCardNumber = generateDebitCardNumber();
