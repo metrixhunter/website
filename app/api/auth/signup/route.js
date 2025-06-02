@@ -3,7 +3,7 @@ import { User } from '@/backend/models/User';
 import dbConnect from '@/backend/utils/dbConnect';
 import { saveUserBackup } from '@/app/secret/backup-util';
 
-const banks = ['SBI', 'HDFC', 'ICICI', 'AXIS', 'PNB', 'Kotak', 'Yes Bank', 'IndusInd'];
+const banks = ['SBI', 'HDFC', 'ICICI', 'AXIS', ];
 const countryCodes = ['+91', '+1', '+44', '+81', '+61', '+49', '+971', '+86'];
 
 function generateAccountNumber() {
