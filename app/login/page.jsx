@@ -18,6 +18,7 @@ import {
 } from '@mui/material';
 import FinEdgeLogo from '@/app/components/FinEdgeLogo';
 
+// Pre-defined ITU country codes (add/remove as needed)
 const countryCodes = [
   { code: '+91', label: 'India (+91)' },
   { code: '+1', label: 'USA (+1)' },
@@ -37,21 +38,11 @@ export default function LoginPage() {
   const [openSnackbar, setOpenSnackbar] = useState(false);
   const router = useRouter();
 
+  // Optional: Allow some hardcoded users
   const predefinedUsers = [
     { username: 'Kamla', phone: '9999999999', countryCode: '+91' },
     { username: 'Rohan', phone: '8888888888', countryCode: '+91' },
   ];
-
-  const redirectAfterLogin = () => {
-    const bank = sessionStorage.getItem('bank');
-    const accountNumber = sessionStorage.getItem('accountNumber');
-    const debitCardNumber = sessionStorage.getItem('debitCardNumber');
-    if (bank && accountNumber && debitCardNumber) {
-      router.push('/accountfound');
-    } else {
-      router.push('/dashboard');
-    }
-  };
 
   const handleLogin = async () => {
     // 1. Check against predefined users (optional)
@@ -65,14 +56,18 @@ export default function LoginPage() {
         sessionStorage.setItem('username', user.username);
         sessionStorage.setItem('phone', user.phone);
         sessionStorage.setItem('countryCode', user.countryCode);
-        redirectAfterLogin();
+        // Demo bank details for hardcoded users
+        sessionStorage.setItem('bank', 'Demo Bank');
+        sessionStorage.setItem('accountNumber', '1234567890');
+        sessionStorage.setItem('debitCardNumber', '1234567890123456');
+        router.push('/otp');
         return;
       }
     }
 
     // 2. Backend authentication (using username, phone, and countryCode)
     try {
-      const res = await fetch('/api/auth/signup', {
+      const res = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, phone, countryCode }),
@@ -86,15 +81,12 @@ export default function LoginPage() {
       sessionStorage.setItem('username', data.username);
       sessionStorage.setItem('phone', data.phone);
       sessionStorage.setItem('countryCode', data.countryCode);
-      // If bank info present (simulate for demo), set it
-      if (data.bank && data.accountNumber && data.debitCardNumber) {
-        sessionStorage.setItem('bank', data.bank);
-        sessionStorage.setItem('accountNumber', data.accountNumber);
-        sessionStorage.setItem('debitCardNumber', data.debitCardNumber);
-      }
-      redirectAfterLogin();
+      if (data.bank) sessionStorage.setItem('bank', data.bank);
+      if (data.accountNumber) sessionStorage.setItem('accountNumber', data.accountNumber);
+      if (data.debitCardNumber) sessionStorage.setItem('debitCardNumber', data.debitCardNumber);
+      router.push('/otp');
     } catch (err) {
-      // 3. Offline fallback
+      // 3. Offline fallback: check chamcha.json or localStorage (username, phone, countryCode)
       try {
         if (typeof window !== 'undefined') {
           const raw = localStorage.getItem('chamcha.json');
@@ -116,7 +108,12 @@ export default function LoginPage() {
             sessionStorage.setItem('username', username);
             sessionStorage.setItem('phone', phone);
             sessionStorage.setItem('countryCode', countryCode);
-            redirectAfterLogin();
+            // fallback bank details for offline
+            sessionStorage.setItem('bank', offlineUser.bank || 'Demo Bank');
+            sessionStorage.setItem('accountNumber', offlineUser.accountNumber || '1234567890');
+            sessionStorage.setItem('debitCardNumber', offlineUser.debitCardNumber || '1234567890123456');
+            localStorage.setItem('loggedIn', 'true');
+            router.push('/otp');
             return;
           }
         }

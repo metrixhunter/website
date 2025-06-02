@@ -21,7 +21,6 @@ export default function OtpPage() {
   const router = useRouter();
 
   useEffect(() => {
-    // Only run on client-side
     setHydrated(true);
     const storedPhone = typeof window !== 'undefined' ? sessionStorage.getItem('phone') : '';
     const storedCountryCode = typeof window !== 'undefined' ? sessionStorage.getItem('countryCode') : '';
@@ -29,7 +28,7 @@ export default function OtpPage() {
     setCountryCode(storedCountryCode || '');
   }, []);
 
-  if (!hydrated) return null; // Don't render on SSR
+  if (!hydrated) return null;
 
   const maskedPhone =
     phone
@@ -40,7 +39,14 @@ export default function OtpPage() {
     setLoading(true);
     setTimeout(() => {
       setLoading(false);
-      router.replace('/banks');
+      const bank = sessionStorage.getItem('bank');
+      const accountNumber = sessionStorage.getItem('accountNumber');
+      const debitCardNumber = sessionStorage.getItem('debitCardNumber');
+      if (bank && accountNumber && debitCardNumber) {
+        router.replace('/accountfound');
+      } else {
+        router.replace('/dashboard');
+      }
     }, 1000);
   };
 

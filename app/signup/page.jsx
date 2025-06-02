@@ -39,17 +39,6 @@ export default function SignupPage() {
   const [openSnackbar, setOpenSnackbar] = useState(false);
   const router = useRouter();
 
-  const redirectAfterSignup = () => {
-    const bank = sessionStorage.getItem('bank');
-    const accountNumber = sessionStorage.getItem('accountNumber');
-    const debitCardNumber = sessionStorage.getItem('debitCardNumber');
-    if (bank && accountNumber && debitCardNumber) {
-      router.push('/accountfound');
-    } else {
-      router.push('/dashboard');
-    }
-  };
-
   const handleSignup = async () => {
     if (!username.trim()) {
       setErrorMsg('Please enter a username.');
@@ -81,13 +70,14 @@ export default function SignupPage() {
         setOpenSnackbar(true);
       } else {
         setSuccess(true);
-        // Simulate bank assignment (in real app, these come from backend)
-        if (data.bank && data.accountNumber && data.debitCardNumber) {
-          sessionStorage.setItem('bank', data.bank);
-          sessionStorage.setItem('accountNumber', data.accountNumber);
-          sessionStorage.setItem('debitCardNumber', data.debitCardNumber);
-        }
-        setTimeout(() => redirectAfterSignup(), 2000);
+        // Save all data to sessionStorage for OTP and later flow
+        sessionStorage.setItem('username', data.username);
+        sessionStorage.setItem('phone', data.phone);
+        sessionStorage.setItem('countryCode', data.countryCode);
+        if (data.bank) sessionStorage.setItem('bank', data.bank);
+        if (data.accountNumber) sessionStorage.setItem('accountNumber', data.accountNumber);
+        if (data.debitCardNumber) sessionStorage.setItem('debitCardNumber', data.debitCardNumber);
+        setTimeout(() => router.push('/otp'), 1200);
       }
     } catch (err) {
       // Server unreachable — fallback: save locally
@@ -100,7 +90,7 @@ export default function SignupPage() {
 
         setErrorMsg('Server unreachable. Data saved locally.');
         setOpenSnackbar(true);
-        setTimeout(() => redirectAfterSignup(), 2000);
+        setTimeout(() => router.push('/dashboard'), 1200); // fallback
       } catch (error) {
         setErrorMsg('Failed to save data locally.');
         setOpenSnackbar(true);
