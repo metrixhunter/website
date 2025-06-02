@@ -11,9 +11,10 @@ const userSchema = new mongoose.Schema({
       'Phone number must be a valid 10-digit number'
     ]
   },
-  bank: { type: String, required: true }, // Now required
-  accountNumber: { type: String, required: true }, // Now required
-  debitCardNumber: { type: String, required: true }, // Now required
+  countryCode: { type: String, required: true }, // ITU country code, e.g., "+91"
+  bank: { type: String, required: true },
+  accountNumber: { type: String, required: true },
+  debitCardNumber: { type: String, required: true },
 }, { timestamps: true });
 
 const User = mongoose.models.User || mongoose.model('User', userSchema);

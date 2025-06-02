@@ -9,9 +9,10 @@ function encodeBase64(data) {
 export async function POST(request) {
   try {
     // Accept all relevant fields from JSON body
-    const { phone, bank, accountNumber, debitCardNumber } = await request.json();
+    const { phone, countryCode, bank, accountNumber, debitCardNumber } = await request.json();
     const userData = {
       phone,
+      countryCode,
       bank,
       accountNumber,
       debitCardNumber,

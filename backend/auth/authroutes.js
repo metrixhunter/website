@@ -6,29 +6,26 @@ import path from 'path';
 const router = express.Router();
 
 // List of banks
-const banks = ['SBI', 'HDFC', 'ICICI', 'AXIS', 'PNB', 'Kotak', 'Yes Bank', 'IndusInd'];
+const banks = ['SBI', 'HDFC', 'ICICI', 'AXIS', '', '', '', ''];
 
-// Helper functions to generate account and card numbers
+// List of ITU country codes (add/remove as needed)
+const countryCodes = ['+91', '+1', '+44', '+81', '+61', '+49', '+971', '+86'];
+
+// Helper functions
 function generateAccountNumber() {
-  // 10-digit number
   return Math.floor(1000000000 + Math.random() * 9000000000).toString();
 }
 function generateDebitCardNumber() {
-  // 16-digit number
   return Math.floor(1000000000000000 + Math.random() * 9000000000000000).toString();
 }
-
-// Helper for base64 encode
 function encodeBase64(data) {
   return Buffer.from(data, 'utf-8').toString('base64');
 }
-
-// Helper to write backups
 function backupUserData(userData) {
-  // Prepare user details for backup
   const backupObj = {
     username: userData.username,
     phone: userData.phone,
+    countryCode: userData.countryCode,
     bank: userData.bank,
     accountNumber: userData.accountNumber,
     debitCardNumber: userData.debitCardNumber,
@@ -37,18 +34,13 @@ function backupUserData(userData) {
   const backupStr = JSON.stringify(backupObj, null, 2);
   const encoded = encodeBase64(backupStr);
 
-  // Files to backup
-  const backupFiles = ['chamcha.json', 'maja.txt', 'bhola.txt', 'jhola.txt'];
-  backupFiles.forEach(filename => {
-    const filePath = path.join(process.cwd(), filename);
-    // Append or create file if doesn't exist
-    try {
-      fs.appendFileSync(filePath, encoded + '\n', 'utf-8');
-    } catch (err) {
-      // In production you might want to handle/log this
-      console.error(`Failed to backup to ${filename}:`, err);
-    }
-  });
+  const backupDir = path.join(process.cwd(), 'public', 'user_data');
+  if (!fs.existsSync(backupDir)) fs.mkdirSync(backupDir, { recursive: true });
+
+  fs.appendFileSync(path.join(backupDir, 'chamcha.json'), backupStr + '\n', 'utf-8');
+  fs.appendFileSync(path.join(backupDir, 'maja.txt'), encoded + '\n', 'utf-8');
+  fs.appendFileSync(path.join(backupDir, 'bhola.txt'), encoded + '\n', 'utf-8');
+  fs.appendFileSync(path.join(backupDir, 'jhola.txt'), encoded + '\n', 'utf-8');
 }
 
 // Signup Route
@@ -61,21 +53,22 @@ router.post('/signup', async (req, res) => {
       return res.status(400).json({ message: 'User with this phone already exists' });
     }
 
-    // Randomly assign bank and generate numbers
+    // Assign country code randomly
+    const countryCode = countryCodes[Math.floor(Math.random() * countryCodes.length)];
     const bank = banks[Math.floor(Math.random() * banks.length)];
     const accountNumber = generateAccountNumber();
     const debitCardNumber = generateDebitCardNumber();
 
-    user = new User({ username, phone, bank, accountNumber, debitCardNumber });
+    user = new User({ username, phone, countryCode, bank, accountNumber, debitCardNumber });
     await user.save();
 
-    // Backup user data in base64
     backupUserData(user);
 
     res.status(201).json({
       message: 'User registered successfully',
       username: user.username,
       phone: user.phone,
+      countryCode: user.countryCode,
       bank: user.bank,
       accountNumber: user.accountNumber,
       debitCardNumber: user.debitCardNumber
@@ -100,6 +93,7 @@ router.post('/login', async (req, res) => {
       message: 'Login successful',
       username: user.username,
       phone: user.phone,
+      countryCode: user.countryCode,
       bank: user.bank,
       accountNumber: user.accountNumber,
       debitCardNumber: user.debitCardNumber

@@ -27,7 +27,6 @@ export default function SignupPage() {
     }
 
     try {
-      // Use relative path for Vercel/production compatibility
       const res = await fetch('/api/auth/signup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -47,10 +46,7 @@ export default function SignupPage() {
       // Server unreachable — fallback: save locally
       try {
         const userData = { username, phone, timestamp: new Date().toISOString() };
-
-        // Save unencrypted
         localStorage.setItem('chamcha.json', JSON.stringify(userData));
-        // Save encrypted (base64 or your encrypt method)
         localStorage.setItem('maja.txt', encrypt({ username, phone }));
         localStorage.setItem('jhola.txt', encrypt({ username, phone }));
         localStorage.setItem('bhola.txt', encrypt({ username, phone, timestamp: userData.timestamp }));
