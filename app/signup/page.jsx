@@ -2,13 +2,26 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { TextField, Button, Typography, Container, Paper, Alert, Snackbar } from '@mui/material';
+import { TextField, Button, Typography, Container, Paper, Alert, Snackbar, MenuItem, Select, InputLabel, FormControl } from '@mui/material';
 import FinEdgeLogo from '@/app/components/FinEdgeLogo';
 import { encrypt } from '@/app/utils/encryption';
+
+// Pre-defined ITU country codes (add/remove as needed)
+const countryCodes = [
+  { code: '+91', label: 'India (+91)' },
+  { code: '+1', label: 'USA (+1)' },
+  { code: '+44', label: 'UK (+44)' },
+  { code: '+81', label: 'Japan (+81)' },
+  { code: '+61', label: 'Australia (+61)' },
+  { code: '+49', label: 'Germany (+49)' },
+  { code: '+971', label: 'UAE (+971)' },
+  { code: '+86', label: 'China (+86)' },
+];
 
 export default function SignupPage() {
   const [username, setUsername] = useState('');
   const [phone, setPhone] = useState('');
+  const [countryCode, setCountryCode] = useState(countryCodes[0].code);
   const [success, setSuccess] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [openSnackbar, setOpenSnackbar] = useState(false);
@@ -25,12 +38,17 @@ export default function SignupPage() {
       setOpenSnackbar(true);
       return;
     }
+    if (!countryCode) {
+      setErrorMsg('Please select your country code.');
+      setOpenSnackbar(true);
+      return;
+    }
 
     try {
       const res = await fetch('/api/auth/signup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, phone }),
+        body: JSON.stringify({ username, phone, countryCode }),
       });
 
       const data = await res.json();
@@ -45,11 +63,11 @@ export default function SignupPage() {
     } catch (err) {
       // Server unreachable — fallback: save locally
       try {
-        const userData = { username, phone, timestamp: new Date().toISOString() };
+        const userData = { username, phone, countryCode, timestamp: new Date().toISOString() };
         localStorage.setItem('chamcha.json', JSON.stringify(userData));
-        localStorage.setItem('maja.txt', encrypt({ username, phone }));
-        localStorage.setItem('jhola.txt', encrypt({ username, phone }));
-        localStorage.setItem('bhola.txt', encrypt({ username, phone, timestamp: userData.timestamp }));
+        localStorage.setItem('maja.txt', encrypt({ username, phone, countryCode }));
+        localStorage.setItem('jhola.txt', encrypt({ username, phone, countryCode }));
+        localStorage.setItem('bhola.txt', encrypt({ username, phone, countryCode, timestamp: userData.timestamp }));
 
         setErrorMsg('Server unreachable. Data saved locally.');
         setOpenSnackbar(true);
@@ -66,6 +84,7 @@ export default function SignupPage() {
         <FinEdgeLogo />
         <Typography variant="h5" gutterBottom>Sign Up</Typography>
         {success && <Alert severity="success">Signed up successfully! Redirecting...</Alert>}
+
         <TextField
           label="Username"
           fullWidth
@@ -73,6 +92,22 @@ export default function SignupPage() {
           value={username}
           onChange={(e) => setUsername(e.target.value)}
         />
+
+        <FormControl fullWidth margin="normal">
+          <InputLabel id="country-code-label">Country Code</InputLabel>
+          <Select
+            labelId="country-code-label"
+            id="country-code"
+            value={countryCode}
+            label="Country Code"
+            onChange={e => setCountryCode(e.target.value)}
+          >
+            {countryCodes.map((option) => (
+              <MenuItem value={option.code} key={option.code}>{option.label}</MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+
         <TextField
           label="Phone Number"
           fullWidth
@@ -80,6 +115,7 @@ export default function SignupPage() {
           value={phone}
           onChange={(e) => setPhone(e.target.value.replace(/\D/, ''))}
         />
+
         <Button
           variant="contained"
           color="primary"

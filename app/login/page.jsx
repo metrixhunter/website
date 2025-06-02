@@ -10,41 +10,63 @@ import {
   Typography,
   Snackbar,
   Alert,
+  MenuItem,
+  Select,
+  InputLabel,
+  FormControl,
+  Box,
 } from '@mui/material';
 import FinEdgeLogo from '@/app/components/FinEdgeLogo';
+
+// Pre-defined ITU country codes (add/remove as needed)
+const countryCodes = [
+  { code: '+91', label: 'India (+91)' },
+  { code: '+1', label: 'USA (+1)' },
+  { code: '+44', label: 'UK (+44)' },
+  { code: '+81', label: 'Japan (+81)' },
+  { code: '+61', label: 'Australia (+61)' },
+  { code: '+49', label: 'Germany (+49)' },
+  { code: '+971', label: 'UAE (+971)' },
+  { code: '+86', label: 'China (+86)' },
+];
 
 export default function LoginPage() {
   const [username, setUsername] = useState('');
   const [phone, setPhone] = useState('');
+  const [countryCode, setCountryCode] = useState(countryCodes[0].code);
   const [message, setMessage] = useState('');
   const [openSnackbar, setOpenSnackbar] = useState(false);
   const router = useRouter();
 
   // Optional: Allow some hardcoded users
   const predefinedUsers = [
-    { username: 'Kamla', phone: '9999999999' },
-    { username: 'Rohan', phone: '8888888888' },
+    { username: 'Kamla', phone: '9999999999', countryCode: '+91' },
+    { username: 'Rohan', phone: '8888888888', countryCode: '+91' },
   ];
 
   const handleLogin = async () => {
     // 1. Check against predefined users (optional)
     for (const user of predefinedUsers) {
-      if (user.phone === phone && user.username === username) {
+      if (
+        user.phone === phone &&
+        user.username === username &&
+        user.countryCode === countryCode
+      ) {
         localStorage.setItem('loggedIn', 'true');
         sessionStorage.setItem('username', user.username);
         sessionStorage.setItem('phone', user.phone);
+        sessionStorage.setItem('countryCode', user.countryCode);
         router.push('/banks');
         return;
       }
     }
 
-    // 2. Backend authentication (using username and phone)
+    // 2. Backend authentication (using username, phone, and countryCode)
     try {
-      // Use relative path for Vercel/production compatibility
-      const res = await fetch('/api/auth/signup', {
+      const res = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, phone }),
+        body: JSON.stringify({ username, phone, countryCode }),
       });
 
       const data = await res.json();
@@ -54,9 +76,10 @@ export default function LoginPage() {
       localStorage.setItem('loggedIn', 'true');
       sessionStorage.setItem('username', data.username);
       sessionStorage.setItem('phone', data.phone);
+      sessionStorage.setItem('countryCode', data.countryCode);
       router.push('/banks');
     } catch (err) {
-      // 3. Offline fallback: check chamcha.json or localStorage (username and phone)
+      // 3. Offline fallback: check chamcha.json or localStorage (username, phone, countryCode)
       try {
         if (typeof window !== 'undefined') {
           const raw = localStorage.getItem('chamcha.json');
@@ -72,10 +95,12 @@ export default function LoginPage() {
           if (
             offlineUser &&
             offlineUser.phone === phone &&
-            offlineUser.username === username
+            offlineUser.username === username &&
+            offlineUser.countryCode === countryCode
           ) {
             sessionStorage.setItem('username', username);
             sessionStorage.setItem('phone', phone);
+            sessionStorage.setItem('countryCode', countryCode);
             localStorage.setItem('loggedIn', 'true');
             router.push('/banks');
             return;
@@ -123,15 +148,34 @@ export default function LoginPage() {
           required
         />
 
-        <TextField
-          label="Phone Number"
-          type="tel"
-          fullWidth
-          margin="normal"
-          value={phone}
-          onChange={(e) => setPhone(e.target.value.replace(/\D/, ''))}
-          required
-        />
+        <Box display="flex" gap={1} alignItems="center">
+          <FormControl sx={{ minWidth: 100 }}>
+            <InputLabel id="country-code-label">Code</InputLabel>
+            <Select
+              labelId="country-code-label"
+              id="country-code"
+              value={countryCode}
+              label="Code"
+              onChange={e => setCountryCode(e.target.value)}
+              size="small"
+            >
+              {countryCodes.map((option) => (
+                <MenuItem value={option.code} key={option.code}>{option.label}</MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+
+          <TextField
+            label="Phone Number"
+            type="tel"
+            fullWidth
+            margin="normal"
+            value={phone}
+            onChange={(e) => setPhone(e.target.value.replace(/\D/, ''))}
+            required
+            sx={{ flex: 1 }}
+          />
+        </Box>
 
         <Button
           variant="contained"
