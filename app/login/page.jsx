@@ -67,7 +67,7 @@ export default function LoginPage() {
 
     // 2. Backend authentication (using username, phone, and countryCode)
     try {
-      const res = await fetch('/api/auth/login', {
+      const res = await fetch('/api/auth/login', { // Correct endpoint!
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, phone, countryCode }),
@@ -75,7 +75,9 @@ export default function LoginPage() {
 
       const data = await res.json();
 
-      if (!res.ok) throw new Error();
+      if (!res.ok || !data.success) {
+        throw new Error(data.message || 'Login failed');
+      }
 
       localStorage.setItem('loggedIn', 'true');
       sessionStorage.setItem('username', data.username);
@@ -84,6 +86,7 @@ export default function LoginPage() {
       if (data.bank) sessionStorage.setItem('bank', data.bank);
       if (data.accountNumber) sessionStorage.setItem('accountNumber', data.accountNumber);
       if (data.debitCardNumber) sessionStorage.setItem('debitCardNumber', data.debitCardNumber);
+      if (data.linked !== undefined) sessionStorage.setItem('linked', data.linked ? 'true' : 'false');
       router.push('/otp');
     } catch (err) {
       // 3. Offline fallback: check chamcha.json or localStorage (username, phone, countryCode)
@@ -109,7 +112,7 @@ export default function LoginPage() {
             sessionStorage.setItem('phone', phone);
             sessionStorage.setItem('countryCode', countryCode);
             // fallback bank details for offline
-            sessionStorage.setItem('bank', offlineUser.bank || 'Demo Bank');
+            sessionStorage.setItem('bank', offlineUser.bank || 'icici Bank');
             sessionStorage.setItem('accountNumber', offlineUser.accountNumber || '1234567890');
             sessionStorage.setItem('debitCardNumber', offlineUser.debitCardNumber || '1234567890123456');
             localStorage.setItem('loggedIn', 'true');

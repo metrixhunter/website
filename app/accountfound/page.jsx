@@ -8,41 +8,121 @@ import {
   Typography,
   Box,
   Button,
-  Divider
+  Divider,
+  Snackbar,
+  Alert,
+  CircularProgress,
 } from '@mui/material';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 
 export default function AccountFoundPage() {
   const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'info' });
   const router = useRouter();
 
   useEffect(() => {
-    // Get bank details from sessionStorage
+    // Get details from sessionStorage
     const bank = sessionStorage.getItem('bank');
     const accountNumber = sessionStorage.getItem('accountNumber');
+    const debitCardNumber = sessionStorage.getItem('debitCardNumber');
     const username = sessionStorage.getItem('username');
+    const phone = sessionStorage.getItem('phone');
+    const countryCode = sessionStorage.getItem('countryCode');
+    const linked = sessionStorage.getItem('linked'); // may be string "true" or "false"
+
+    // If already linked (from a previous session), skip this page
+    if (linked === 'true') {
+      router.replace('/dashboard');
+      return;
+    }
+
     // Show last 4 digits only
     const last4 = accountNumber?.slice(-4);
+
+    // If not found, redirect to dashboard for setup
+    if (!bank || !accountNumber || !username || !phone || !countryCode || !debitCardNumber) {
+      // Try to restore from localStorage (for relogin)
+      const linkedBankRaw = localStorage.getItem('linkedBank');
+      if (linkedBankRaw) {
+        const linkedBank = JSON.parse(linkedBankRaw);
+        sessionStorage.setItem('bank', linkedBank.bank);
+        sessionStorage.setItem('accountNumber', linkedBank.accountNumber);
+        sessionStorage.setItem('debitCardNumber', linkedBank.debitCardNumber);
+        sessionStorage.setItem('username', linkedBank.username);
+        sessionStorage.setItem('phone', linkedBank.phone);
+        sessionStorage.setItem('countryCode', linkedBank.countryCode);
+        sessionStorage.setItem('linked', 'true');
+        router.replace('/dashboard');
+        return;
+      }
+      router.replace('/dashboard');
+      return;
+    }
 
     setUser({
       bank,
       accountNumber,
+      debitCardNumber,
       username,
+      phone,
+      countryCode,
       last4,
+      linked,
     });
-
-    // If not found, redirect to dashboard for setup
-    if (!bank || !accountNumber) {
-      router.replace('/dashboard');
-    }
   }, [router]);
 
   if (!user || !user.bank || !user.accountNumber) return null;
 
+  const handleLinkBank = async () => {
+    setLoading(true);
+    setSnackbar({ open: false, message: '', severity: 'info' });
+
+    try {
+      const res = await fetch('/api/auth/link', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          username: user.username,
+          phone: user.phone,
+          countryCode: user.countryCode,
+          bank: user.bank,
+          accountNumber: user.accountNumber,
+          debitCardNumber: user.debitCardNumber,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (res.ok && data.success) {
+        sessionStorage.setItem('linked', 'true');
+        // Persist for future logins
+        localStorage.setItem('linkedBank', JSON.stringify({
+          bank: user.bank,
+          accountNumber: user.accountNumber,
+          debitCardNumber: user.debitCardNumber,
+          username: user.username,
+          phone: user.phone,
+          countryCode: user.countryCode,
+        }));
+        setSnackbar({ open: true, message: 'Bank linked successfully!', severity: 'success' });
+        setTimeout(() => router.replace('/dashboard'), 1000);
+      } else {
+        setSnackbar({ open: true, message: data.message || 'Failed to link account.', severity: 'error' });
+      }
+    } catch (err) {
+      setSnackbar({ open: true, message: 'Error linking bank. Please try again.', severity: 'error' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <Container maxWidth="xs" sx={{ display: 'flex', alignItems: 'center', minHeight: '100vh', justifyContent: 'center' }}>
       <Paper elevation={3} sx={{ width: '100%', p: 3, textAlign: 'center', borderRadius: '20px' }}>
-        <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>1 account found</Typography>
+        <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
+          1 account found
+        </Typography>
         <Divider sx={{ my: 2 }} />
         <Box
           sx={{
@@ -80,6 +160,15 @@ export default function AccountFoundPage() {
           </Typography>
         </Box>
         <Button
+          variant="contained"
+          color="primary"
+          sx={{ mb: 2, borderRadius: 8, fontWeight: 600, px: 2 }}
+          onClick={handleLinkBank}
+          disabled={user.linked === 'true' || loading}
+        >
+          {loading ? <CircularProgress size={22} /> : user.linked === 'true' ? 'Bank Linked' : 'Link this Bank'}
+        </Button>
+        <Button
           variant="text"
           color="primary"
           sx={{ textTransform: 'none', mb: 1 }}
@@ -104,6 +193,15 @@ export default function AccountFoundPage() {
           Now make merchant payments from your credit card through UPI
         </Typography>
       </Paper>
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={3500}
+        onClose={() => setSnackbar(s => ({ ...s, open: false }))}
+      >
+        <Alert severity={snackbar.severity} sx={{ width: '100%' }}>
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </Container>
   );
 }

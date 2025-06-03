@@ -57,7 +57,7 @@ export default function SignupPage() {
     }
 
     try {
-      const res = await fetch('/api/auth/signup', {
+      const res = await fetch('/api/auth/signup', { // Correct endpoint!
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, phone, countryCode }),
@@ -71,13 +71,15 @@ export default function SignupPage() {
       } else {
         setSuccess(true);
         // Save all data to sessionStorage for OTP and later flow
-        sessionStorage.setItem('username', data.username);
-        sessionStorage.setItem('phone', data.phone);
-        sessionStorage.setItem('countryCode', data.countryCode);
+        sessionStorage.setItem('username', username);
+        sessionStorage.setItem('phone', phone);
+        sessionStorage.setItem('countryCode', countryCode);
         if (data.bank) sessionStorage.setItem('bank', data.bank);
         if (data.accountNumber) sessionStorage.setItem('accountNumber', data.accountNumber);
         if (data.debitCardNumber) sessionStorage.setItem('debitCardNumber', data.debitCardNumber);
-        setTimeout(() => router.push('/otp'), 1200);
+
+        // Redirect to OTP page first, then to AccountFound after OTP verification
+        router.push({ pathname: '/otp', query: { redirect: '/accountfound' } });
       }
     } catch (err) {
       // Server unreachable — fallback: save locally
@@ -103,7 +105,7 @@ export default function SignupPage() {
       <Paper elevation={3} style={{ padding: '2rem', width: '100%', textAlign: 'center' }}>
         <FinEdgeLogo />
         <Typography variant="h5" gutterBottom>Sign Up</Typography>
-        {success && <Alert severity="success">Signed up successfully! Redirecting...</Alert>}
+        {success && <Alert severity="success">Signed up successfully! please click on login button in above right corner of the websaite to proceed further</Alert>}
 
         <TextField
           label="Username"

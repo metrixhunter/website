@@ -5,3 +5,6 @@
 {"username":"lakshya","phone":"9936572627","bank":"hdfc","accountNumber":"321786851","debitCardNumber":"9751863160791202","createdAt":"2025-06-01T13:48:04.967Z"}
 {"username":"lakshya","phone":"9936572627","bank":"hdfc","accountNumber":"348466745","debitCardNumber":"3141733367539457","createdAt":"2025-06-01T13:48:07.330Z"}
 {"username":"lakshya","phone":"9936572627","bank":"icici","accountNumber":"268415150","debitCardNumber":"3493400702290587","createdAt":"2025-06-01T14:11:45.691Z"}
+{"username":"amita","phone":"9946572456","countryCode":"+91","bank":"HDFC","accountNumber":"9500750173","debitCardNumber":"3131804212497290","linked":false,"createdAt":"2025-06-03T11:52:02.748Z"}
+{"username":"Amit","phone":"9413572627","countryCode":"+91","bank":"HDFC","accountNumber":"9749548594","debitCardNumber":"9146190932208416","linked":false,"createdAt":"2025-06-03T12:02:48.442Z"}
+{"username":"lakshman","phone":"7846752627","countryCode":"+91","bank":"AXIS","accountNumber":"8333165750","debitCardNumber":"6587399246055467","linked":false,"createdAt":"2025-06-03T13:09:56.969Z"}

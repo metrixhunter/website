@@ -1,167 +1,88 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import {
   Container,
   Paper,
   Typography,
-  Box,
+  TextField,
   Button,
-  Divider,
+  Box,
   Snackbar,
   Alert,
   CircularProgress,
 } from '@mui/material';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 
-export default function AccountFoundPage() {
-  const [user, setUser] = useState(null);
+export default function OtpPage() {
+  const [otp, setOtp] = useState('');
   const [loading, setLoading] = useState(false);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'info' });
   const router = useRouter();
+  const searchParams = useSearchParams();
 
-  useEffect(() => {
-    // Get details from sessionStorage
-    const bank = sessionStorage.getItem('bank');
-    const accountNumber = sessionStorage.getItem('accountNumber');
-    const debitCardNumber = sessionStorage.getItem('debitCardNumber');
-    const username = sessionStorage.getItem('username');
-    const phone = sessionStorage.getItem('phone');
-    const countryCode = sessionStorage.getItem('countryCode');
-    const linked = sessionStorage.getItem('linked'); // may be string "true" or "false"
-
-    // Show last 4 digits only
-    const last4 = accountNumber?.slice(-4);
-
-    setUser({
-      bank,
-      accountNumber,
-      debitCardNumber,
-      username,
-      phone,
-      countryCode,
-      last4,
-      linked,
-    });
-
-    // If not found, redirect to dashboard for setup
-    if (!bank || !accountNumber || !username || !phone || !countryCode || !debitCardNumber) {
-      router.replace('/dashboard');
-    }
-  }, [router]);
-
-  if (!user || !user.bank || !user.accountNumber) return null;
-
-  const handleLinkBank = async () => {
+  // For demo: simulate OTP = 123456 (replace with real API call in production)
+  const handleVerifyOtp = async (e) => {
+    e.preventDefault();
     setLoading(true);
     setSnackbar({ open: false, message: '', severity: 'info' });
 
     try {
-      const res = await fetch('/api/auth/link', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          username: user.username,
-          phone: user.phone,
-          countryCode: user.countryCode,
-          bank: user.bank,
-          accountNumber: user.accountNumber,
-          debitCardNumber: user.debitCardNumber,
-        }),
-      });
+      // Replace this with your actual OTP verification API call if you have one
+      await new Promise((resolve) => setTimeout(resolve, 900)); // simulate network
 
-      const data = await res.json();
-
-      if (res.ok && data.success) {
-        sessionStorage.setItem('linked', 'true');
-        setSnackbar({ open: true, message: 'Bank linked successfully!', severity: 'success' });
-        setTimeout(() => router.replace('/dashboard'), 1000);
+      if (otp === '123456') {
+        setSnackbar({ open: true, message: 'OTP verified successfully!', severity: 'success' });
+        setTimeout(() => {
+          // Check for redirect query, else go to /accountfound
+          const redirect = searchParams.get('redirect');
+          router.replace(redirect || '/accountfound');
+        }, 1000);
       } else {
-        setSnackbar({ open: true, message: data.message || 'Failed to link account.', severity: 'error' });
+        setSnackbar({ open: true, message: 'Invalid OTP. Please try again.', severity: 'error' });
       }
     } catch (err) {
-      setSnackbar({ open: true, message: 'Error linking bank. Please try again.', severity: 'error' });
+      setSnackbar({ open: true, message: 'Error verifying OTP. Please try again.', severity: 'error' });
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <Container maxWidth="xs" sx={{ display: 'flex', alignItems: 'center', minHeight: '100vh', justifyContent: 'center' }}>
-      <Paper elevation={3} sx={{ width: '100%', p: 3, textAlign: 'center', borderRadius: '20px' }}>
-        <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
-          1 account found
+    <Container maxWidth="xs" sx={{
+      display: 'flex', alignItems: 'center', minHeight: '100vh', justifyContent: 'center'
+    }}>
+      <Paper elevation={3} sx={{
+        width: '100%', p: 3, textAlign: 'center', borderRadius: '20px'
+      }}>
+        <Typography variant="h5" gutterBottom sx={{ fontWeight: 700 }}>
+          Enter OTP
         </Typography>
-        <Divider sx={{ my: 2 }} />
-        <Box
-          sx={{
-            border: '2px solid #1976d2',
-            borderRadius: '12px',
-            p: 2,
-            mb: 2,
-            background: '#f8faff',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'flex-start',
-            position: 'relative'
-          }}
-        >
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <CheckCircleIcon color="primary" />
-            <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-              {user.bank} - {user.last4}
-            </Typography>
-          </Box>
-          <Typography
-            variant="body2"
-            sx={{
-              mt: 1,
-              background: '#e3f2fd',
-              px: 1.5,
-              py: 0.5,
-              borderRadius: '6px',
-              width: 'fit-content',
-              color: '#1976d2',
-              fontSize: '0.95rem'
-            }}
+        <Typography variant="body2" sx={{ mb: 3 }}>
+          Please enter the 6-digit OTP sent to your registered phone number.
+        </Typography>
+        <Box component="form" onSubmit={handleVerifyOtp} sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+          <TextField
+            label="OTP"
+            value={otp}
+            onChange={e => setOtp(e.target.value.replace(/\D/, '').slice(0, 6))}
+            fullWidth
+            inputProps={{ maxLength: 6 }}
+            required
+            autoFocus
+          />
+
+          <Button
+            type="submit"
+            variant="contained"
+            color="primary"
+            disabled={loading || otp.length !== 6}
+            fullWidth
+            sx={{ fontWeight: 600, borderRadius: 8, mt: 1 }}
           >
-            UPI payments will be received here
-          </Typography>
+            {loading ? <CircularProgress size={22} /> : 'Verify OTP'}
+          </Button>
         </Box>
-        <Button
-          variant="contained"
-          color="primary"
-          sx={{ mb: 2, borderRadius: 8, fontWeight: 600, px: 2 }}
-          onClick={handleLinkBank}
-          disabled={user.linked === 'true' || loading}
-        >
-          {loading ? <CircularProgress size={22} /> : user.linked === 'true' ? 'Bank Linked' : 'Link this Bank'}
-        </Button>
-        <Button
-          variant="text"
-          color="primary"
-          sx={{ textTransform: 'none', mb: 1 }}
-          onClick={() => router.push('/dashboard')}
-        >
-          + Add Bank account
-        </Button>
-        <Divider sx={{ my: 2 }} />
-        <Button
-          variant="outlined"
-          color="primary"
-          sx={{
-            borderRadius: 8,
-            fontWeight: 600,
-            px: 2
-          }}
-          disabled
-        >
-          + Add Rupay Credit Card
-        </Button>
-        <Typography variant="caption" display="block" sx={{ mt: 2, color: '#888' }}>
-          Now make merchant payments from your credit card through UPI
-        </Typography>
       </Paper>
       <Snackbar
         open={snackbar.open}
