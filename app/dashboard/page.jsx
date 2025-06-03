@@ -16,9 +16,12 @@ import {
   ListItem,
   ListItemIcon,
   ListItemText,
+  Tooltip,
 } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
+import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import { logout } from '@/app/logout/logout';
 import FeatureButton from '@/app/components/FeatureButton';
 
@@ -36,7 +39,7 @@ import CreditCardIcon from '@mui/icons-material/CreditCard';
 
 export default function DashboardPage() {
   const router = useRouter();
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(true); // default: visible on desktop, can toggle
   const [user, setUser] = useState(null);
 
   useEffect(() => {
@@ -84,53 +87,54 @@ export default function DashboardPage() {
     { label: 'Logout', icon: <ArrowBackIcon />, onClick: handleLogout },
   ];
 
+  // Responsive sidebar width
+  const sidebarWidth = sidebarOpen ? 240 : 56;
+
   return (
     <Box sx={{ bgcolor: '#f4f8fb', minHeight: '100vh', pb: 4 }}>
       {/* Top Bar */}
       <Box sx={{
-        width: '100%',
-        bgcolor: '#004A99',
-        color: '#fff',
-        py: 2,
-        display: 'flex',
-        alignItems: 'center',
-        px: { xs: 2, sm: 4 },
-        position: 'sticky',
-        top: 0,
-        zIndex: 1100,
-      }}>
-        <IconButton
-          sx={{ color: '#fff', mr: 1, display: { md: 'none' } }}
-          onClick={() => setSidebarOpen(true)}
-        >
-          <MenuIcon />
-        </IconButton>
-        <Typography variant="h6" sx={{ fontWeight: 600, flex: 1 }}>
-          Dashboard
-        </Typography>
+    position: 'fixed',
+    top: 16,
+    right: 24,
+    zIndex: 1200,
+    fontWeight: 600,
+    bgcolor: '#1976d2',
+    color: '#fff',
+    borderRadius: 2,
+    px: 3,
+    py: 1,
+    boxShadow: 2,
+    '&:hover': { bgcolor: '#1256a1' }
+  }}
+>
+      
+        {/* Toggle Sidebar Button (always visible) */}
+        
+        
         <Button color="inherit" onClick={handleLogout} sx={{ fontWeight: 500, display: { xs: 'none', md: 'inline-flex' } }}>
           Logout
         </Button>
       </Box>
 
-      {/* Sidebar Drawer */}
+      {/* Sidebar Drawer for mobile */}
       <Drawer
         anchor="left"
-        open={sidebarOpen}
-        onClose={() => setSidebarOpen(false)}
+        open={!sidebarOpen && typeof window !== 'undefined' && window.innerWidth < 960}
+        onClose={() => setSidebarOpen(true)}
         variant="temporary"
         sx={{
+          display: { xs: 'block', md: 'none' },
           '& .MuiDrawer-paper': {
             width: 240,
             bgcolor: '#fff',
             pt: 2,
           },
-          display: { xs: 'block', md: 'none' }
         }}
       >
         <Box>
-          <IconButton onClick={() => setSidebarOpen(false)} sx={{ mb: 1, ml: 1 }}>
-            <ArrowBackIcon />
+          <IconButton onClick={() => setSidebarOpen(true)} sx={{ mb: 1, ml: 1 }}>
+            <ChevronRightIcon />
           </IconButton>
           <Divider />
           <List>
@@ -139,7 +143,7 @@ export default function DashboardPage() {
                 button
                 key={item.label}
                 onClick={() => {
-                  setSidebarOpen(false);
+                  setSidebarOpen(true);
                   if (item.href) router.push(item.href);
                   if (item.onClick) item.onClick();
                 }}
@@ -152,22 +156,40 @@ export default function DashboardPage() {
         </Box>
       </Drawer>
 
-      {/* Permanent Sidebar for md+ */}
+      {/* Permanent Sidebar for md+ with toggle */}
       <Box
         sx={{
           position: 'fixed',
           top: 64,
           left: 0,
           height: '100vh',
-          width: 220,
+          width: { xs: 0, md: sidebarWidth },
           bgcolor: '#fff',
-          borderRight: '1px solid #e0e0e0',
+          borderRight: sidebarOpen ? '1px solid #e0e0e0' : 'none',
           display: { xs: 'none', md: 'flex' },
           flexDirection: 'column',
           zIndex: 1000,
-          pt: 2
+          pt: 2,
+          transition: 'width 0.2s',
+          overflowX: 'hidden',
         }}
       >
+        <Box sx={{ display: 'flex', alignItems: 'center', px: 1, mb: 2 }}>
+          <Tooltip title={sidebarOpen ? 'Hide Menu' : 'Show Menu'}>
+            <IconButton
+              sx={{ color: '#1976d2', mr: 1 }}
+              onClick={() => setSidebarOpen((v) => !v)}
+              edge="start"
+            >
+              {sidebarOpen ? <ChevronLeftIcon /> : <MenuIcon />}
+            </IconButton>
+          </Tooltip>
+          {sidebarOpen && (
+            <Typography variant="h6" sx={{ fontWeight: 600, color: '#1976d2', flex: 1 }}>
+              Dashboard
+            </Typography>
+          )}
+        </Box>
         <List>
           {sidebarLinks.map((item, idx) => (
             <ListItem
@@ -177,9 +199,16 @@ export default function DashboardPage() {
                 if (item.href) router.push(item.href);
                 if (item.onClick) item.onClick();
               }}
+              sx={{
+                minHeight: 48,
+                px: 1,
+                ...(sidebarOpen ? {} : { justifyContent: 'center' }),
+              }}
             >
-              <ListItemIcon>{item.icon}</ListItemIcon>
-              <ListItemText primary={item.label} />
+              <ListItemIcon sx={{ minWidth: 0, mr: sidebarOpen ? 2 : 'auto', justifyContent: 'center' }}>
+                {item.icon}
+              </ListItemIcon>
+              {sidebarOpen && <ListItemText primary={item.label} />}
             </ListItem>
           ))}
         </List>
@@ -189,7 +218,7 @@ export default function DashboardPage() {
       <Container
         maxWidth="sm"
         sx={{
-          ml: { md: '240px' },
+          ml: { md: `${sidebarWidth}px` },
           flex: 1,
           display: 'flex',
           flexDirection: 'column',
@@ -320,4 +349,3 @@ export default function DashboardPage() {
     </Box>
   );
 }
-    
