@@ -21,20 +21,19 @@ export default function OtpPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  // For demo: simulate OTP = 123456 (replace with real API call in production)
+  // Demo: OTP is 123456
   const handleVerifyOtp = async (e) => {
     e.preventDefault();
     setLoading(true);
     setSnackbar({ open: false, message: '', severity: 'info' });
 
     try {
-      // Replace this with your actual OTP verification API call if you have one
-      await new Promise((resolve) => setTimeout(resolve, 900)); // simulate network
+      // Simulate network/API call
+      await new Promise((resolve) => setTimeout(resolve, 900));
 
       if (otp === '123456') {
         setSnackbar({ open: true, message: 'OTP verified successfully!', severity: 'success' });
         setTimeout(() => {
-          // Check for redirect query, else go to /accountfound
           const redirect = searchParams.get('redirect');
           router.replace(redirect || '/accountfound');
         }, 1000);
@@ -67,7 +66,7 @@ export default function OtpPage() {
             value={otp}
             onChange={e => setOtp(e.target.value.replace(/\D/, '').slice(0, 6))}
             fullWidth
-            inputProps={{ maxLength: 6 }}
+            inputProps={{ maxLength: 6, inputMode: 'numeric', pattern: '[0-9]*' }}
             required
             autoFocus
           />
