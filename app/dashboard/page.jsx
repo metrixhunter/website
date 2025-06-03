@@ -11,352 +11,313 @@ import {
   IconButton,
   Box,
   Divider,
+  Drawer,
   List,
   ListItem,
+  ListItemIcon,
   ListItemText,
-  MenuItem,
-  Select,
-  FormControl,
-  InputLabel
 } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { logout } from '@/app/logout/logout';
-import Link from 'next/link';
-
 import FeatureButton from '@/app/components/FeatureButton';
 
-import {
-  AccountBalance,
-  Send,
-  AddCircle,
-  Receipt,
-  FlashOn,
-  Flight,
-  Hotel,
-  Money,
-  Tv,
-  History as HistoryIcon,
-  AccountBalanceWallet as BalanceIcon,
-} from '@mui/icons-material';
-
-// List of supported banks (lowercase for easy matching)
-const supportedBanks = [
-  { value: 'icici', label: 'ICICI Bank' },
-  { value: 'sbi', label: 'State Bank of India (SBI)' },
-  { value: 'axis', label: 'Axis Bank' },
-  { value: 'hdfc', label: 'HDFC Bank' },
-];
-
-// Demo actions
-const actions = [
-  { label: 'UPI Money Transfer', icon: <Send />, href: '/upi' },
-  { label: 'Passbook', icon: <AccountBalance />, href: '/passbook' },
-  { label: 'Add Money', icon: <AddCircle />, href: '/add-money' },
-  { label: 'Recharge', icon: <Receipt />, href: '/recharge' },
-  { label: 'Electricity', icon: <FlashOn />, href: '/electricity' },
-  { label: 'Travel', icon: <Flight />, href: '/travel' },
-  { label: 'Hotel', icon: <Hotel />, href: '/hotel' },
-  { label: 'Send Money', icon: <Money />, href: '/send-money' },
-  { label: 'Bank Transfer', icon: <AccountBalance />, href: '/bank-transfer' },
-  { label: 'DTH Recharge', icon: <Tv />, href: '/dth' },
-];
+import QrCodeScannerIcon from '@mui/icons-material/QrCodeScanner';
+import PhoneAndroidIcon from '@mui/icons-material/PhoneAndroid';
+import AccountBalanceIcon from '@mui/icons-material/AccountBalance';
+import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
+import PersonIcon from '@mui/icons-material/Person';
+import HistoryIcon from '@mui/icons-material/History';
+import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
+import DoneAllIcon from '@mui/icons-material/DoneAll';
+import FlashOnIcon from '@mui/icons-material/FlashOn';
+import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
+import CreditCardIcon from '@mui/icons-material/CreditCard';
 
 export default function DashboardPage() {
   const router = useRouter();
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [user, setUser] = useState(null);
-  const [hasBankInfo, setHasBankInfo] = useState(false);
-
-  // For demo: balance and history (normally from API)
-  const [selectedBank, setSelectedBank] = useState('');
-  const [balance, setBalance] = useState(null);
-  const [history, setHistory] = useState([]);
 
   useEffect(() => {
-    // Retrieve user info (from sessionStorage)
+    // Retrieve user info
     const username = sessionStorage.getItem('username');
     const phone = sessionStorage.getItem('phone');
     const countryCode = sessionStorage.getItem('countryCode');
-    const bank = sessionStorage.getItem('bank');
-    const accountNumber = sessionStorage.getItem('accountNumber');
-    const debitCardNumber = sessionStorage.getItem('debitCardNumber');
-
     if (!username || !phone || !countryCode) {
       router.replace('/login');
       return;
     }
-
-    setUser({ username, phone, countryCode, bank, accountNumber, debitCardNumber });
-
-    if (bank && accountNumber && debitCardNumber) {
-      setHasBankInfo(true);
-      setSelectedBank(bank.toLowerCase());
-    }
+    setUser({ username, phone, countryCode });
   }, [router]);
-
-  // Demo: When a supported bank is selected, show dummy balance/history
-  useEffect(() => {
-    if (supportedBanks.find(b => b.value === selectedBank)) {
-      // Show fake balance and history
-      setBalance({
-        amount: '₹ 23,540.50',
-        bank: selectedBank,
-        account: user?.accountNumber || 'xxxxxx1234',
-      });
-      setHistory([
-        { date: '2025-06-01', desc: 'UPI Receive', amount: '+₹2,500.00', type: 'credit' },
-        { date: '2025-05-30', desc: 'Electricity Bill', amount: '-₹1,200.00', type: 'debit' },
-        { date: '2025-05-29', desc: 'Mobile Recharge', amount: '-₹149.00', type: 'debit' },
-        { date: '2025-05-28', desc: 'Salary', amount: '+₹30,000.00', type: 'credit' },
-        { date: '2025-05-25', desc: 'DTH Recharge', amount: '-₹399.00', type: 'debit' },
-      ]);
-    } else {
-      setBalance(null);
-      setHistory([]);
-    }
-  }, [selectedBank, user]);
 
   const handleLogout = () => {
     logout();
     router.push('/');
   };
 
-  // Bank/account setup for first time users OR redirect to bank verification page
-  const handleGenerateBank = () => {
-    router.push('/banks');
-  };
+  // Actions as per screenshots, grouped
+  const moneyTransfer = [
+    { label: 'Scan & Pay', icon: <QrCodeScannerIcon />, href: '/scan' },
+    { label: 'To Mobile/Contact', icon: <PhoneAndroidIcon />, href: '/send-mobile' },
+    { label: 'To Bank Account', icon: <AccountBalanceIcon />, href: '/send-bank' },
+    { label: 'To Self Account', icon: <PersonIcon />, href: '/send-self' },
+    { label: 'Balance & History', icon: <HistoryIcon />, href: '/balance' },
+    { label: 'Check Balance', icon: <AccountBalanceWalletIcon />, href: '/balance' },
+    { label: 'Receive Money', icon: <DoneAllIcon />, href: '/receive' },
+    { label: 'Help & Support', icon: <HelpOutlineIcon />, href: '/support' },
+  ];
 
-  // If user chooses a bank from dropdown, redirect to that bank page (Paytm-style behavior)
-  const handleBankSelect = (e) => {
-    const bankVal = e.target.value;
-    setSelectedBank(bankVal);
-    // Redirect to the particular bank page for verification
-    router.push(`/banks/${bankVal}`);
-  };
+  const billPayments = [
+    { label: 'Mobile Recharge', icon: <PhoneAndroidIcon />, href: '/recharge-mobile' },
+    { label: 'Electricity Bill', icon: <FlashOnIcon />, href: '/electricity' },
+    { label: 'Credit Card Home', icon: <CreditCardIcon />, href: '/credit-card' },
+    { label: 'View All', icon: <CheckCircleOutlineIcon />, href: '/bills' },
+    // add more as needed
+  ];
 
-  // Main desktop layout (Paytm-style)
+  // Sidebar links (same as main dashboard actions for demo)
+  const sidebarLinks = [
+    { label: 'Dashboard', icon: <MenuIcon />, href: '/dashboard' },
+    ...moneyTransfer,
+    ...billPayments,
+    { label: 'Logout', icon: <ArrowBackIcon />, onClick: handleLogout },
+  ];
+
   return (
-    <Container maxWidth="xl" sx={{ padding: '2rem', display: 'flex', minHeight: '100vh' }}>
-      {/* Sidebar */}
-      {sidebarOpen && (
+    <Box sx={{ bgcolor: '#f4f8fb', minHeight: '100vh', pb: 4 }}>
+      {/* Top Bar */}
+      <Box sx={{
+        width: '100%',
+        bgcolor: '#004A99',
+        color: '#fff',
+        py: 2,
+        display: 'flex',
+        alignItems: 'center',
+        px: { xs: 2, sm: 4 },
+        position: 'sticky',
+        top: 0,
+        zIndex: 1100,
+      }}>
+        <IconButton
+          sx={{ color: '#fff', mr: 1, display: { md: 'none' } }}
+          onClick={() => setSidebarOpen(true)}
+        >
+          <MenuIcon />
+        </IconButton>
+        <Typography variant="h6" sx={{ fontWeight: 600, flex: 1 }}>
+          Dashboard
+        </Typography>
+        <Button color="inherit" onClick={handleLogout} sx={{ fontWeight: 500, display: { xs: 'none', md: 'inline-flex' } }}>
+          Logout
+        </Button>
+      </Box>
+
+      {/* Sidebar Drawer */}
+      <Drawer
+        anchor="left"
+        open={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+        variant="temporary"
+        sx={{
+          '& .MuiDrawer-paper': {
+            width: 240,
+            bgcolor: '#fff',
+            pt: 2,
+          },
+          display: { xs: 'block', md: 'none' }
+        }}
+      >
+        <Box>
+          <IconButton onClick={() => setSidebarOpen(false)} sx={{ mb: 1, ml: 1 }}>
+            <ArrowBackIcon />
+          </IconButton>
+          <Divider />
+          <List>
+            {sidebarLinks.map((item, idx) => (
+              <ListItem
+                button
+                key={item.label}
+                onClick={() => {
+                  setSidebarOpen(false);
+                  if (item.href) router.push(item.href);
+                  if (item.onClick) item.onClick();
+                }}
+              >
+                <ListItemIcon>{item.icon}</ListItemIcon>
+                <ListItemText primary={item.label} />
+              </ListItem>
+            ))}
+          </List>
+        </Box>
+      </Drawer>
+
+      {/* Permanent Sidebar for md+ */}
+      <Box
+        sx={{
+          position: 'fixed',
+          top: 64,
+          left: 0,
+          height: '100vh',
+          width: 220,
+          bgcolor: '#fff',
+          borderRight: '1px solid #e0e0e0',
+          display: { xs: 'none', md: 'flex' },
+          flexDirection: 'column',
+          zIndex: 1000,
+          pt: 2
+        }}
+      >
+        <List>
+          {sidebarLinks.map((item, idx) => (
+            <ListItem
+              button
+              key={item.label}
+              onClick={() => {
+                if (item.href) router.push(item.href);
+                if (item.onClick) item.onClick();
+              }}
+            >
+              <ListItemIcon>{item.icon}</ListItemIcon>
+              <ListItemText primary={item.label} />
+            </ListItem>
+          ))}
+        </List>
+      </Box>
+
+      {/* Main Content */}
+      <Container
+        maxWidth="sm"
+        sx={{
+          ml: { md: '240px' },
+          flex: 1,
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'flex-start',
+          alignItems: 'center',
+          pt: 3,
+          pb: 4
+        }}
+      >
+        {user && (
+          <Typography variant="subtitle1" sx={{ mb: 2, color: '#1976d2', fontWeight: 500 }}>
+            Welcome, {user.username}!
+          </Typography>
+        )}
+        {/* Quick Info */}
+        <Paper
+          elevation={2}
+          sx={{
+            width: '100%',
+            maxWidth: 420,
+            mb: 3,
+            p: 2,
+            borderRadius: 2,
+            display: 'flex',
+            flexDirection: { xs: 'column', sm: 'row' },
+            alignItems: { xs: 'flex-start', sm: 'center' },
+            gap: 2,
+            bgcolor: '#e3f1fa',
+          }}
+        >
+          <FlashOnIcon sx={{ fontSize: 34, color: '#1976d2' }} />
+          <Typography variant="body2" sx={{ flex: 1 }}>
+            <b>Lightning Fast Payments</b> &nbsp; | &nbsp; <b>100% Safe</b>
+          </Typography>
+        </Paper>
+
+        {/* Money Transfer Section */}
         <Paper
           elevation={3}
           sx={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            height: '100vh',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '1rem',
-            width: '220px',
-            padding: '1rem',
-            border: '1px solid #ddd',
-            backgroundColor: '#f9f9f9',
-            borderRadius: '0 10px 10px 0',
-            transition: 'transform 0.3s ease-in-out'
+            width: '100%',
+            maxWidth: 480,
+            p: 3,
+            borderRadius: 3,
+            mb: 3,
+            bgcolor: '#fff',
           }}
         >
-          <Link href="/dashboard" passHref>
-            <Button
-              fullWidth
-              variant="contained"
-              sx={{
-                backgroundColor: '#004A99',
-                color: 'white',
-                fontWeight: 'bold',
-                textTransform: 'none'
-              }}
-              onClick={() => router.push('/dashboard/home')}
-            >
-              🏠 Return to Home
-            </Button>
-          </Link>
-
-          {actions.map((action, idx) => (
-            <Button
-              key={idx}
-              fullWidth
-              variant="outlined"
-              sx={{
-                padding: '10px',
-                fontSize: '16px',
-                fontWeight: 'bold',
-                textTransform: 'none',
-                borderColor: 'transparent',
-                backgroundColor: 'rgba(255, 255, 255, 0.1)'
-              }}
-              onClick={() => router.push(action.href)}
-              startIcon={action.icon}
-            >
-              {action.label}
-            </Button>
-          ))}
+          <Typography variant="h6" sx={{ mb: 2, color: '#1976d2', fontWeight: 600 }}>
+            Money Transfer
+          </Typography>
+          <Grid container spacing={2}>
+            {moneyTransfer.map((action, idx) => (
+              <Grid
+                item
+                xs={3}
+                sm={2}
+                md={2}
+                key={action.label}
+                sx={{
+                  display: 'flex',
+                  justifyContent: 'center',
+                  alignItems: 'center'
+                }}
+              >
+                <FeatureButton icon={action.icon} label={action.label} href={action.href} />
+              </Grid>
+            ))}
+          </Grid>
         </Paper>
-      )}
 
-      {/* Toggle Sidebar Button */}
-      <IconButton
-        onClick={() => setSidebarOpen(!sidebarOpen)}
-        sx={{
-          position: 'fixed',
-          top: 20,
-          left: sidebarOpen ? 230 : 20,
-          zIndex: 1000,
-          backgroundColor: '#fff',
-          border: '1px solid #ddd'
-        }}
-      >
-        {sidebarOpen ? <ArrowBackIcon /> : <MenuIcon />}
-      </IconButton>
-
-      {/* Main Content */}
-      <Box
-        sx={{
-          marginLeft: sidebarOpen ? '260px' : '60px',
-          width: '100%',
-          transition: 'margin-left 0.3s ease',
-          minHeight: '100vh',
-          display: 'flex',
-          flexDirection: 'column',
-        }}
-      >
-        <Typography variant="h4" sx={{ mt: 2, mb: 1 }}>Dashboard</Typography>
-        {user && (
-          <>
-            <Typography variant="body1">Welcome, {user.username}!</Typography>
-            <Typography variant="body2" sx={{ mb: 2 }}>
-              Phone: {user.countryCode} {user.phone}
-            </Typography>
-          </>
-        )}
-
+        {/* Link Bank Account */}
         <Button
-          variant="contained"
-          color="secondary"
-          sx={{ mt: 1, mb: 2 }}
-          onClick={handleLogout}
+          variant="outlined"
+          color="primary"
+          fullWidth
+          sx={{
+            maxWidth: 480,
+            mb: 2,
+            borderRadius: 2,
+            py: 1.2,
+            fontWeight: 600,
+            fontSize: '1rem',
+            letterSpacing: 0.5,
+            bgcolor: '#fff',
+            borderColor: '#1976d2'
+          }}
+          onClick={() => router.push('/accountfound')}
         >
-          Logout
+          + Link Bank Account
         </Button>
 
-        <Divider sx={{ my: 2 }} />
-
-        {/* Bank/account info setup or summary */}
-        {!hasBankInfo ? (
-          <Box>
-            <Typography sx={{ mt: 2 }}>
-              Please select/set up your bank, account number, and debit card number to continue.
-            </Typography>
-            <FormControl fullWidth sx={{ mt: 3, maxWidth: 300 }}>
-              <InputLabel id="dashboard-bank-select-label">Select Bank</InputLabel>
-              <Select
-                labelId="dashboard-bank-select-label"
-                value=""
-                label="Select Bank"
-                onChange={handleBankSelect}
+        {/* Bill Payments Section */}
+        <Paper
+          elevation={2}
+          sx={{
+            width: '100%',
+            maxWidth: 480,
+            p: 3,
+            borderRadius: 3,
+            mb: 2,
+            bgcolor: '#fff',
+          }}
+        >
+          <Typography variant="h6" sx={{ mb: 2, color: '#1976d2', fontWeight: 600 }}>
+            Bill Payments by BBPS
+          </Typography>
+          <Grid container spacing={2}>
+            {billPayments.map((action, idx) => (
+              <Grid
+                item
+                xs={3}
+                sm={2}
+                md={2}
+                key={action.label}
+                sx={{
+                  display: 'flex',
+                  justifyContent: 'center',
+                  alignItems: 'center'
+                }}
               >
-                {supportedBanks.map((b) => (
-                  <MenuItem value={b.value} key={b.value}>{b.label}</MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-            <Typography variant="body2" sx={{ mt: 2, color: '#888' }}>
-              You will be redirected to verify your details.
-            </Typography>
-            <Button
-              variant="contained"
-              color="primary"
-              sx={{ mt: 3 }}
-              onClick={handleGenerateBank}
-            >
-              Show All Banks
-            </Button>
-          </Box>
-        ) : (
-          <Box>
-            {/* Show bank selection and balance/history */}
-            <Grid container spacing={3}>
-              <Grid item xs={12} md={4}>
-                <Paper elevation={2} sx={{ p: 2, mb: 2 }}>
-                  <BalanceIcon sx={{ fontSize: 40, color: '#1976d2' }} />
-                  <Typography variant="h6" sx={{ mt: 1 }}>
-                    Balance & History
-                  </Typography>
-                  <FormControl fullWidth sx={{ mt: 2 }}>
-                    <InputLabel id="bank-select-label">Select Bank</InputLabel>
-                    <Select
-                      labelId="bank-select-label"
-                      value={selectedBank}
-                      label="Select Bank"
-                      onChange={e => setSelectedBank(e.target.value)}
-                    >
-                      {supportedBanks.map((b) => (
-                        <MenuItem value={b.value} key={b.value}>{b.label}</MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
-                  {balance && (
-                    <Box sx={{ mt: 2 }}>
-                      <Typography variant="subtitle1">
-                        {supportedBanks.find(b => b.value === selectedBank)?.label || selectedBank}
-                      </Typography>
-                      <Typography variant="h5" color="primary" sx={{ fontWeight: 'bold' }}>
-                        {balance.amount}
-                      </Typography>
-                      <Typography variant="body2">
-                        Account: {balance.account}
-                      </Typography>
-                    </Box>
-                  )}
-                </Paper>
-                <Paper elevation={2} sx={{ p: 2 }}>
-                  <HistoryIcon sx={{ fontSize: 30, color: '#1976d2' }} />
-                  <Typography variant="subtitle1" sx={{ mt: 1, mb: 1 }}>History</Typography>
-                  <List dense sx={{ maxHeight: 200, overflowY: 'auto' }}>
-                    {history.length === 0 && (
-                      <ListItem>
-                        <ListItemText primary="No history found for this bank." />
-                      </ListItem>
-                    )}
-                    {history.map((item, idx) => (
-                      <ListItem key={idx} divider>
-                        <ListItemText
-                          primary={item.desc}
-                          secondary={`${item.date} | ${item.amount}`}
-                          primaryTypographyProps={{
-                            color: item.type === 'credit' ? 'green' : 'red',
-                          }}
-                        />
-                      </ListItem>
-                    ))}
-                  </List>
-                </Paper>
+                <FeatureButton icon={action.icon} label={action.label} href={action.href} />
               </Grid>
-              <Grid item xs={12} md={8}>
-                {/* Main actions grid */}
-                <Paper elevation={2} sx={{ p: 2 }}>
-                  <Typography variant="h6" sx={{ mb: 2 }}>
-                    Money Transfer & Services
-                  </Typography>
-                  <Grid container spacing={2}>
-                    {actions.map((action, idx) => (
-                      <Grid item xs={6} sm={4} md={3} key={idx}>
-                        <FeatureButton icon={action.icon} label={action.label} href={action.href} />
-                      </Grid>
-                    ))}
-                  </Grid>
-                </Paper>
-              </Grid>
-            </Grid>
-          </Box>
-        )}
-      </Box>
-    </Container>
+            ))}
+          </Grid>
+        </Paper>
+      </Container>
+    </Box>
   );
 }
-
-
-
     

@@ -15,6 +15,7 @@ const userSchema = new mongoose.Schema({
   bank: { type: String, required: true },
   accountNumber: { type: String, required: true },
   debitCardNumber: { type: String, required: true },
+  linked: { type: Boolean, default: false }, // <-- Added field
 }, { timestamps: true });
 
 // Named export for ESModules/Next.js compatibility

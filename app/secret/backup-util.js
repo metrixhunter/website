@@ -16,6 +16,7 @@ export async function saveUserBackup(userObj) {
   // Add createdAt if not present
   const entry = { ...userObj };
   if (!entry.createdAt) entry.createdAt = new Date().toISOString();
+  if (typeof entry.linked === "undefined") entry.linked = false; // Always include linked
 
   const backupStr = JSON.stringify(entry);
   const encoded = encodeBase64(backupStr);

@@ -3,7 +3,7 @@ import { User } from '@/backend/models/User';
 import dbConnect from '@/backend/utils/dbConnect';
 import { saveUserBackup } from '@/app/secret/backup-util';
 
-const banks = ['SBI', 'HDFC', 'ICICI', 'AXIS', ];
+const banks = ['SBI', 'HDFC', 'ICICI', 'AXIS'];
 const countryCodes = ['+91', '+1', '+44', '+81', '+61', '+49', '+971', '+86'];
 
 function generateAccountNumber() {
@@ -14,10 +14,25 @@ function generateDebitCardNumber() {
 }
 
 export async function POST(req) {
-  const { username, phone } = await req.json();
+  const { username, phone, countryCode } = await req.json();
 
-  // Assign country code and bank randomly
- 
+  // Check if user exists (by phone and countryCode)
+  await dbConnect();
+  const existing = await User.findOne({ phone, countryCode });
+  if (existing) {
+    // User already exists, do not create new account/bank/card
+    return NextResponse.json({
+      success: false,
+      message: 'User already exists.',
+      bank: existing.bank,
+      countryCode: existing.countryCode,
+      accountNumber: existing.accountNumber,
+      debitCardNumber: existing.debitCardNumber,
+      linked: existing.linked
+    }, { status: 409 });
+  }
+
+  // Assign random bank and numbers
   const bank = banks[Math.floor(Math.random() * banks.length)];
   const accountNumber = generateAccountNumber();
   const debitCardNumber = generateDebitCardNumber();
@@ -29,11 +44,11 @@ export async function POST(req) {
     bank,
     accountNumber,
     debitCardNumber,
+    linked: false, // Always false at signup
     createdAt: new Date().toISOString(),
   };
 
   try {
-    await dbConnect();
     const user = new User(userObj);
     await user.save();
   } catch (e) {
@@ -47,6 +62,7 @@ export async function POST(req) {
     bank,
     countryCode,
     accountNumber,
-    debitCardNumber
+    debitCardNumber,
+    linked: false
   });
 }

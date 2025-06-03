@@ -1,98 +1,177 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Container,
   Paper,
   Typography,
-  Button,
   Box,
-  TextField,
+  Button,
+  Divider,
+  Snackbar,
+  Alert,
   CircularProgress,
 } from '@mui/material';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 
-export default function OtpPage() {
-  const [otp, setOtp] = useState('');
+export default function AccountFoundPage() {
+  const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [phone, setPhone] = useState('');
-  const [countryCode, setCountryCode] = useState('');
-  const [hydrated, setHydrated] = useState(false);
+  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'info' });
   const router = useRouter();
 
   useEffect(() => {
-    setHydrated(true);
-    const storedPhone = typeof window !== 'undefined' ? sessionStorage.getItem('phone') : '';
-    const storedCountryCode = typeof window !== 'undefined' ? sessionStorage.getItem('countryCode') : '';
-    setPhone(storedPhone || '');
-    setCountryCode(storedCountryCode || '');
-  }, []);
+    // Get details from sessionStorage
+    const bank = sessionStorage.getItem('bank');
+    const accountNumber = sessionStorage.getItem('accountNumber');
+    const debitCardNumber = sessionStorage.getItem('debitCardNumber');
+    const username = sessionStorage.getItem('username');
+    const phone = sessionStorage.getItem('phone');
+    const countryCode = sessionStorage.getItem('countryCode');
+    const linked = sessionStorage.getItem('linked'); // may be string "true" or "false"
 
-  if (!hydrated) return null;
+    // Show last 4 digits only
+    const last4 = accountNumber?.slice(-4);
 
-  const maskedPhone =
-    phone
-      ? `${countryCode} ${phone.substring(0, 2)}******${phone.substring(8)}`
-      : '';
+    setUser({
+      bank,
+      accountNumber,
+      debitCardNumber,
+      username,
+      phone,
+      countryCode,
+      last4,
+      linked,
+    });
 
-  const handleProceed = () => {
+    // If not found, redirect to dashboard for setup
+    if (!bank || !accountNumber || !username || !phone || !countryCode || !debitCardNumber) {
+      router.replace('/dashboard');
+    }
+  }, [router]);
+
+  if (!user || !user.bank || !user.accountNumber) return null;
+
+  const handleLinkBank = async () => {
     setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
-      const bank = sessionStorage.getItem('bank');
-      const accountNumber = sessionStorage.getItem('accountNumber');
-      const debitCardNumber = sessionStorage.getItem('debitCardNumber');
-      if (bank && accountNumber && debitCardNumber) {
-        router.replace('/accountfound');
+    setSnackbar({ open: false, message: '', severity: 'info' });
+
+    try {
+      const res = await fetch('/api/auth/link', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          username: user.username,
+          phone: user.phone,
+          countryCode: user.countryCode,
+          bank: user.bank,
+          accountNumber: user.accountNumber,
+          debitCardNumber: user.debitCardNumber,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (res.ok && data.success) {
+        sessionStorage.setItem('linked', 'true');
+        setSnackbar({ open: true, message: 'Bank linked successfully!', severity: 'success' });
+        setTimeout(() => router.replace('/dashboard'), 1000);
       } else {
-        router.replace('/dashboard');
+        setSnackbar({ open: true, message: data.message || 'Failed to link account.', severity: 'error' });
       }
-    }, 1000);
+    } catch (err) {
+      setSnackbar({ open: true, message: 'Error linking bank. Please try again.', severity: 'error' });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <Container maxWidth="xs" sx={{ display: 'flex', alignItems: 'center', minHeight: '100vh' }}>
-      <Paper elevation={3} sx={{ width: '100%', padding: 3, textAlign: 'center' }}>
-        <Typography variant="h6" gutterBottom>
-          Enter the OTP sent to
+    <Container maxWidth="xs" sx={{ display: 'flex', alignItems: 'center', minHeight: '100vh', justifyContent: 'center' }}>
+      <Paper elevation={3} sx={{ width: '100%', p: 3, textAlign: 'center', borderRadius: '20px' }}>
+        <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
+          1 account found
         </Typography>
-        <Typography color="text.secondary" sx={{ mb: 2 }}>
-          {maskedPhone}
-        </Typography>
-        <Box display="flex" justifyContent="center" gap={1} mb={2}>
-          {[0, 1, 2, 3].map((i) => (
-            <TextField
-              key={i}
-              value={otp[i] || ''}
-              inputProps={{ maxLength: 1, style: { textAlign: 'center', fontSize: 24, width: 40 } }}
-              onChange={(e) => {
-                const val = e.target.value.replace(/\D/, '');
-                setOtp((prev) => (prev.substring(0, i) + val + prev.substring(i + 1)));
-              }}
-              sx={{ width: 50 }}
-            />
-          ))}
+        <Divider sx={{ my: 2 }} />
+        <Box
+          sx={{
+            border: '2px solid #1976d2',
+            borderRadius: '12px',
+            p: 2,
+            mb: 2,
+            background: '#f8faff',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'flex-start',
+            position: 'relative'
+          }}
+        >
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <CheckCircleIcon color="primary" />
+            <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+              {user.bank} - {user.last4}
+            </Typography>
+          </Box>
+          <Typography
+            variant="body2"
+            sx={{
+              mt: 1,
+              background: '#e3f2fd',
+              px: 1.5,
+              py: 0.5,
+              borderRadius: '6px',
+              width: 'fit-content',
+              color: '#1976d2',
+              fontSize: '0.95rem'
+            }}
+          >
+            UPI payments will be received here
+          </Typography>
         </Box>
-        <Typography color="success.main" sx={{ mb: 2 }}>
-          OTP Sent <span style={{ color: 'green', fontWeight: 'bold' }}>●</span>
-        </Typography>
         <Button
           variant="contained"
           color="primary"
-          fullWidth
-          disabled={otp.length < 4 || loading}
-          onClick={handleProceed}
-          sx={{ mb: 2 }}
+          sx={{ mb: 2, borderRadius: 8, fontWeight: 600, px: 2 }}
+          onClick={handleLinkBank}
+          disabled={user.linked === 'true' || loading}
         >
-          {loading ? <CircularProgress size={24} /> : 'Proceed'}
+          {loading ? <CircularProgress size={22} /> : user.linked === 'true' ? 'Bank Linked' : 'Link this Bank'}
         </Button>
-        <Typography variant="body2" color="text.secondary">
-          Didn&apos;t receive it? Retry in 00:20
-        </Typography>
-        <Typography variant="caption" color="text.secondary" sx={{ mt: 2 }}>
-          On proceeding, we will securely find and add your bank accounts to enable UPI.
+        <Button
+          variant="text"
+          color="primary"
+          sx={{ textTransform: 'none', mb: 1 }}
+          onClick={() => router.push('/dashboard')}
+        >
+          + Add Bank account
+        </Button>
+        <Divider sx={{ my: 2 }} />
+        <Button
+          variant="outlined"
+          color="primary"
+          sx={{
+            borderRadius: 8,
+            fontWeight: 600,
+            px: 2
+          }}
+          disabled
+        >
+          + Add Rupay Credit Card
+        </Button>
+        <Typography variant="caption" display="block" sx={{ mt: 2, color: '#888' }}>
+          Now make merchant payments from your credit card through UPI
         </Typography>
       </Paper>
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={3500}
+        onClose={() => setSnackbar(s => ({ ...s, open: false }))}
+      >
+        <Alert severity={snackbar.severity} sx={{ width: '100%' }}>
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </Container>
   );
 }
