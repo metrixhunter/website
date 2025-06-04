@@ -15,13 +15,13 @@ import {
   FormControlLabel,
   List,
   ListItem,
+  CircularProgress,
 } from '@mui/material';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 
 export default function AccountFoundPage() {
   const [user, setUser] = useState(null);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'info' });
-  const [linkedBanks, setLinkedBanks] = useState([]);
+  const [linkedBanks, setLinkedBanks] = useState(null); // null = loading, [] = checked & none
   const [selectedBankIdx, setSelectedBankIdx] = useState(-1);
   const router = useRouter();
 
@@ -75,7 +75,16 @@ export default function AccountFoundPage() {
     }
   };
 
-  if (!linkedBanks.length) return null; // While checking or if no banks, don't render
+  if (linkedBanks === null) {
+    // Still loading
+    return (
+      <Container maxWidth="xs" sx={{ display: 'flex', alignItems: 'center', minHeight: '100vh', justifyContent: 'center' }}>
+        <CircularProgress />
+      </Container>
+    );
+  }
+
+  if (!linkedBanks.length) return null; // Already redirected
 
   return (
     <Container maxWidth="xs" sx={{ display: 'flex', alignItems: 'center', minHeight: '100vh', justifyContent: 'center' }}>
