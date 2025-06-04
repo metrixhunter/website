@@ -15,39 +15,50 @@ export default function ClientComponent({ bankId }) {
   const [checked, setChecked] = useState(false);
   const router = useRouter();
 
-  // On mount, check for credentials in sessionStorage (do not store, just check)
+  // Only check for 'linked' state on mount, do not prefill credentials
   useEffect(() => {
-    const storedCountryCode = sessionStorage.getItem('countryCode') || '';
-    const storedPhone = sessionStorage.getItem('phone') || '';
-    const storedAccountNumber = sessionStorage.getItem('accountNumber') || '';
-    const storedDebitCard = sessionStorage.getItem('debitCardNumber') || '';
-
-    if (storedCountryCode && storedPhone && storedAccountNumber && storedDebitCard) {
-      setCountryCode(storedCountryCode);
-      setPhone(storedPhone);
-      setAccountNumber(storedAccountNumber);
-      setDebitCard(storedDebitCard);
-      setMessage('✅ Credentials found in session storage.');
-      setOpenSnackbar(true);
-      setChecked(true);
+    const linked = sessionStorage.getItem('linked');
+    if (linked === 'true') {
+      setMessage('✅ Bank credentials previously verified.');
     } else {
-      setMessage('❌ Credentials not found in session storage. Please enter them.');
-      setOpenSnackbar(true);
-      setChecked(true);
+      setMessage('Fill and check your credentials below.');
     }
+    setChecked(true);
+    setOpenSnackbar(true);
   }, []);
 
-  const handleSubmit = (e) => {
+  // Simulate a "check" action (e.g. would be a server call in real app)
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    setMessage('This form is for checking credentials only, not for storing.');
-    setOpenSnackbar(true);
+    setLoading(true);
+    setMessage('');
+    setOpenSnackbar(false);
+
+    // Simulate "checking" credentials
+    setTimeout(() => {
+      // "Server" check logic: all fields must be non-empty
+      if (countryCode && phone && accountNumber && debitCard) {
+        // Simulate a server response object
+        const data = { linked: true };
+        if (data.linked !== undefined)
+          sessionStorage.setItem('linked', data.linked ? 'true' : 'false');
+        setMessage('✅ Credentials check passed! Bank is linked.');
+      } else {
+        const data = { linked: false };
+        if (data.linked !== undefined)
+          sessionStorage.setItem('linked', 'false');
+        setMessage('❌ Please fill in all fields to check credentials.');
+      }
+      setOpenSnackbar(true);
+      setLoading(false);
+    }, 900);
   };
 
   if (!checked) {
     return (
       <Container maxWidth="xs" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
         <Paper elevation={3} style={{ padding: '2rem', width: '100%', textAlign: 'center' }}>
-          <Typography variant="h6" gutterBottom>Checking credentials...</Typography>
+          <Typography variant="h6" gutterBottom>Checking previous status...</Typography>
           <CircularProgress />
         </Paper>
       </Container>
@@ -68,7 +79,6 @@ export default function ClientComponent({ bankId }) {
             required
             sx={{ mb: 1 }}
             inputProps={{ maxLength: 5 }}
-            disabled
           />
           <TextField
             label="Phone Number"
@@ -87,7 +97,6 @@ export default function ClientComponent({ bankId }) {
               inputMode: "numeric",
               pattern: "[0-9]*"
             }}
-            disabled
           />
           <TextField
             label="Account Number"
@@ -96,7 +105,6 @@ export default function ClientComponent({ bankId }) {
             value={accountNumber}
             onChange={e => setAccountNumber(e.target.value)}
             required
-            disabled
           />
           <TextField
             label="Debit Card Number"
@@ -105,10 +113,9 @@ export default function ClientComponent({ bankId }) {
             value={debitCard}
             onChange={e => setDebitCard(e.target.value)}
             required
-            disabled
           />
-          <Button variant="contained" color="primary" fullWidth type="submit" sx={{ mt: 2 }} disabled>
-            Checked
+          <Button variant="contained" color="primary" fullWidth type="submit" sx={{ mt: 2 }} disabled={loading}>
+            {loading ? <CircularProgress size={22} /> : 'Check Credentials'}
           </Button>
         </form>
       </Paper>
