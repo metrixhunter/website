@@ -2,9 +2,10 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { TextField, Button, Container, Paper, Typography, Snackbar, Alert, CircularProgress } from '@mui/material';
+import { TextField, Button, Container, Paper, Typography, Snackbar, Alert, CircularProgress, InputAdornment } from '@mui/material';
 
 export default function ClientComponent({ bankId }) {
+  const [countryCode, setCountryCode] = useState('+91');
   const [phone, setPhone] = useState('');
   const [accountNumber, setAccountNumber] = useState('');
   const [debitCard, setDebitCard] = useState('');
@@ -27,6 +28,7 @@ export default function ClientComponent({ bankId }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           phone,
+          countryCode,
           bank: bankId,
           accountNumber,
           debitCardNumber: debitCard
@@ -43,7 +45,7 @@ export default function ClientComponent({ bankId }) {
           body: JSON.stringify({
             username: '', // If you want to use a username, fetch from storage or add a username input
             phone,
-            countryCode: '', // Add input if needed
+            countryCode,
             bank: bankId,
             accountNumber,
             debitCardNumber: debitCard,
@@ -57,11 +59,15 @@ export default function ClientComponent({ bankId }) {
           sessionStorage.setItem('accountNumber', accountNumber);
           sessionStorage.setItem('debitCardNumber', debitCard);
           sessionStorage.setItem('linked', 'true');
+          sessionStorage.setItem('phone', phone);
+          sessionStorage.setItem('countryCode', countryCode);
           localStorage.setItem('linkedBank', JSON.stringify({
             bank: bankId,
             accountNumber,
             debitCardNumber: debitCard,
-            // Add username, phone, countryCode if available
+            phone,
+            countryCode,
+            // Add username if available
           }));
 
           setMessage('✅ Verification & linking successful!');
@@ -88,7 +94,34 @@ export default function ClientComponent({ bankId }) {
       <Paper elevation={3} style={{ padding: '2rem', width: '100%', textAlign: 'center' }}>
         <Typography variant="h6" gutterBottom>Verify Your Bank Account</Typography>
         <form onSubmit={handleSubmit}>
-          <TextField label="Phone Number" fullWidth margin="normal" value={phone} onChange={e => setPhone(e.target.value)} required />
+          <TextField
+            label="Country Code"
+            fullWidth
+            margin="normal"
+            value={countryCode}
+            onChange={e => setCountryCode(e.target.value)}
+            required
+            sx={{ mb: 1 }}
+            inputProps={{ maxLength: 5 }}
+          />
+          <TextField
+            label="Phone Number"
+            fullWidth
+            margin="normal"
+            value={phone}
+            onChange={e => setPhone(e.target.value)}
+            required
+            sx={{ mb: 1 }}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <Typography variant="body2">{countryCode}</Typography>
+                </InputAdornment>
+              ),
+              inputMode: "numeric",
+              pattern: "[0-9]*"
+            }}
+          />
           <TextField label="Account Number" fullWidth margin="normal" value={accountNumber} onChange={e => setAccountNumber(e.target.value)} required />
           <TextField label="Debit Card Number" fullWidth margin="normal" value={debitCard} onChange={e => setDebitCard(e.target.value)} required />
           <Button variant="contained" color="primary" fullWidth type="submit" sx={{ mt: 2 }} disabled={loading}>

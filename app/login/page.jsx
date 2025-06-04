@@ -86,7 +86,7 @@ export default function LoginPage() {
       if (data.bank) sessionStorage.setItem('bank', data.bank);
       if (data.accountNumber) sessionStorage.setItem('accountNumber', data.accountNumber);
       if (data.debitCardNumber) sessionStorage.setItem('debitCardNumber', data.debitCardNumber);
-      if (data.linked !== undefined) sessionStorage.setItem('linked', data.linked ? 'true' : 'false');
+     // if (data.linked !== undefined) sessionStorage.setItem('linked', data.linked ? 'true' : 'false');
       router.push('/otp');
     } catch (err) {
       // 3. Offline fallback: check chamcha.json or localStorage (username, phone, countryCode)

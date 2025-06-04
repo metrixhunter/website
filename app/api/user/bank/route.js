@@ -4,17 +4,17 @@ import dbConnect from '@/backend/utils/dbConnect';
 
 export async function POST(req) {
   await dbConnect();
-  const { phone, bank, accountNumber, debitCardNumber } = await req.json();
+  // Expect countryCode in the request body!
+  const { phone, countryCode, bank, accountNumber, debitCardNumber } = await req.json();
 
-  const user = await User.findOne({ phone });
+  // Always find user by BOTH phone and countryCode
+  const user = await User.findOne({ phone, countryCode });
   if (!user) {
+    console.log('User not found with', { phone, countryCode });
     return NextResponse.json({ error: 'User not found' }, { status: 404 });
   }
 
-  // Debug logs for troubleshooting
-  console.log('user.bank:', user.bank, '| received bank:', bank);
-
-  // Compare bank names in a case-insensitive and whitespace-insensitive way
+  // Compare bank names case-insensitively and with trim
   if (
     !user.bank ||
     !bank ||
