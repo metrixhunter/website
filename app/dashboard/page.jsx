@@ -65,7 +65,7 @@ export default function DashboardPage() {
       }
     }
     if (!username || !phone || !countryCode) {
-      router.replace('/login');
+      router.replace('/dashboard');
       return;
     }
     setUser({ username, phone, countryCode });
