@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { TextField, Button, Container, Paper, Typography, Snackbar, Alert } from '@mui/material';
+import { TextField, Button, Container, Paper, Typography, Snackbar, Alert, CircularProgress } from '@mui/material';
 
 export default function ClientComponent({ bankId }) {
   const [phone, setPhone] = useState('');
@@ -10,31 +10,76 @@ export default function ClientComponent({ bankId }) {
   const [debitCard, setDebitCard] = useState('');
   const [message, setMessage] = useState('');
   const [openSnackbar, setOpenSnackbar] = useState(false);
+  const [loading, setLoading] = useState(false);
   const router = useRouter();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    const res = await fetch('/api/user/bank', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        phone,
-        bank: bankId,
-        accountNumber,
-        debitCardNumber: debitCard
-      })
-    });
+    setLoading(true);
+    setMessage('');
+    setOpenSnackbar(false);
 
-    const data = await res.json();
+    try {
+      // Step 1: Verify bank info
+      const res = await fetch('/api/user/bank', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          phone,
+          bank: bankId,
+          accountNumber,
+          debitCardNumber: debitCard
+        })
+      });
 
-    if (data.success) {
-      setMessage('✅ Verification successful!');
+      const data = await res.json();
+
+      if (data.success) {
+        // Step 2: Link bank info
+        const linkRes = await fetch('/api/auth/link', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            username: '', // If you want to use a username, fetch from storage or add a username input
+            phone,
+            countryCode: '', // Add input if needed
+            bank: bankId,
+            accountNumber,
+            debitCardNumber: debitCard,
+          }),
+        });
+        const linkData = await linkRes.json();
+
+        if (linkRes.ok && linkData.success) {
+          // Store for future sessions if needed
+          sessionStorage.setItem('bank', bankId);
+          sessionStorage.setItem('accountNumber', accountNumber);
+          sessionStorage.setItem('debitCardNumber', debitCard);
+          sessionStorage.setItem('linked', 'true');
+          localStorage.setItem('linkedBank', JSON.stringify({
+            bank: bankId,
+            accountNumber,
+            debitCardNumber: debitCard,
+            // Add username, phone, countryCode if available
+          }));
+
+          setMessage('✅ Verification & linking successful!');
+          setOpenSnackbar(true);
+          setTimeout(() => router.push('/dashboard'), 1500);
+        } else {
+          setMessage(`❌ ${linkData.message || 'Failed to link bank account.'}`);
+          setOpenSnackbar(true);
+        }
+      } else {
+        setMessage(`❌ ${data.error || 'Verification failed.'}`);
+        setOpenSnackbar(true);
+      }
+    } catch (err) {
+      setMessage('❌ Error verifying or linking bank. Please try again.');
       setOpenSnackbar(true);
-      setTimeout(() => router.push('/dashboard'), 1500);
-    } else {
-      setMessage(`❌ ${data.error || 'Verification failed.'}`);
-      setOpenSnackbar(true);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -46,7 +91,9 @@ export default function ClientComponent({ bankId }) {
           <TextField label="Phone Number" fullWidth margin="normal" value={phone} onChange={e => setPhone(e.target.value)} required />
           <TextField label="Account Number" fullWidth margin="normal" value={accountNumber} onChange={e => setAccountNumber(e.target.value)} required />
           <TextField label="Debit Card Number" fullWidth margin="normal" value={debitCard} onChange={e => setDebitCard(e.target.value)} required />
-          <Button variant="contained" color="primary" fullWidth type="submit" sx={{ mt: 2 }}>Verify</Button>
+          <Button variant="contained" color="primary" fullWidth type="submit" sx={{ mt: 2 }} disabled={loading}>
+            {loading ? <CircularProgress size={22} /> : 'Verify'}
+          </Button>
         </form>
       </Paper>
       <Snackbar open={openSnackbar} autoHideDuration={3000} onClose={() => setOpenSnackbar(false)}>
@@ -55,5 +102,3 @@ export default function ClientComponent({ bankId }) {
     </Container>
   );
 }
-
-

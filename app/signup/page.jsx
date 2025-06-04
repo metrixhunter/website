@@ -57,7 +57,7 @@ export default function SignupPage() {
     }
 
     try {
-      const res = await fetch('/api/auth/signup', { // Correct endpoint!
+      const res = await fetch('/api/auth/signup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, phone, countryCode }),
@@ -78,8 +78,10 @@ export default function SignupPage() {
         if (data.accountNumber) sessionStorage.setItem('accountNumber', data.accountNumber);
         if (data.debitCardNumber) sessionStorage.setItem('debitCardNumber', data.debitCardNumber);
 
-        // Redirect to OTP page first, then to AccountFound after OTP verification
-        router.push({ pathname: '/otp', query: { redirect: '/accountfound' } });
+        // Redirect to OTP page after short delay
+        setTimeout(() => {
+          router.push({ pathname: '/otp', query: { redirect: '/accountfound' } });
+        }, 900);
       }
     } catch (err) {
       // Server unreachable — fallback: save locally
@@ -90,9 +92,12 @@ export default function SignupPage() {
         localStorage.setItem('jhola.txt', encrypt({ username, phone, countryCode }));
         localStorage.setItem('bhola.txt', encrypt({ username, phone, countryCode, timestamp: userData.timestamp }));
 
+        setSuccess(true);
         setErrorMsg('Server unreachable. Data saved locally.');
         setOpenSnackbar(true);
-        setTimeout(() => router.push('/dashboard'), 1200); // fallback
+        setTimeout(() => {
+          router.push({ pathname: '/otp', query: { redirect: '/accountfound' } });
+        }, 1200);
       } catch (error) {
         setErrorMsg('Failed to save data locally.');
         setOpenSnackbar(true);
@@ -105,7 +110,7 @@ export default function SignupPage() {
       <Paper elevation={3} style={{ padding: '2rem', width: '100%', textAlign: 'center' }}>
         <FinEdgeLogo />
         <Typography variant="h5" gutterBottom>Sign Up</Typography>
-        {success && <Alert severity="success">Signed up successfully! please click on login button in above right corner of the websaite to proceed further</Alert>}
+        {success && <Alert severity="success">Signed up successfully! Please enter the OTP sent to your phone.</Alert>}
 
         <TextField
           label="Username"
@@ -147,12 +152,17 @@ export default function SignupPage() {
           fullWidth
           style={{ marginTop: '1rem' }}
           onClick={handleSignup}
+          disabled={success}
         >
           Sign Up
         </Button>
       </Paper>
       <Snackbar open={openSnackbar} autoHideDuration={4000} onClose={() => setOpenSnackbar(false)}>
-        <Alert severity={success ? "success" : "error"}>{success ? "Signed up successfully! Redirecting..." : errorMsg}</Alert>
+        <Alert severity={success ? "success" : "error"}>
+          {success
+            ? "Signed up successfully! Redirecting to OTP page..."
+            : errorMsg}
+        </Alert>
       </Snackbar>
     </Container>
   );

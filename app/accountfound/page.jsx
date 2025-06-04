@@ -11,187 +11,119 @@ import {
   Divider,
   Snackbar,
   Alert,
-  CircularProgress,
+  Checkbox,
+  FormControlLabel,
+  List,
+  ListItem,
 } from '@mui/material';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 
 export default function AccountFoundPage() {
   const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(false);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'info' });
+  const [linkedBanks, setLinkedBanks] = useState([]);
+  const [selectedBankIdx, setSelectedBankIdx] = useState(-1);
   const router = useRouter();
 
   useEffect(() => {
-    // Get details from sessionStorage
+    // Only show this page if NOT already linked
+    const linked = sessionStorage.getItem('linked');
+    if (linked !== 'true') {
+      router.replace('/dashboard');
+      return;
+    }
+
+    // Load previously linked banks from localStorage
+    let banks = [];
+    const raw = localStorage.getItem('linkedBank');
+    if (raw) {
+      try {
+        const parsed = JSON.parse(raw);
+        banks = Array.isArray(parsed) ? parsed : [parsed];
+      } catch {
+        banks = [];
+      }
+    }
+
+    if (!banks.length) {
+      // If no linked banks, redirect to dashboard
+      router.replace('/dashboard');
+      return;
+    }
+    setLinkedBanks(banks);
+
+    // Load current session user info
     const bank = sessionStorage.getItem('bank');
     const accountNumber = sessionStorage.getItem('accountNumber');
-    const debitCardNumber = sessionStorage.getItem('debitCardNumber');
     const username = sessionStorage.getItem('username');
-    const phone = sessionStorage.getItem('phone');
-    const countryCode = sessionStorage.getItem('countryCode');
-    const linked = sessionStorage.getItem('linked'); // may be string "true" or "false"
-
-    // If already linked (from a previous session), skip this page
-    if (linked === 'true') {
-      router.replace('/dashboard');
-      return;
-    }
-
-    // Show last 4 digits only
     const last4 = accountNumber?.slice(-4);
-
-    // If not found, redirect to dashboard for setup
-    if (!bank || !accountNumber || !username || !phone || !countryCode || !debitCardNumber) {
-      // Try to restore from localStorage (for relogin)
-      const linkedBankRaw = localStorage.getItem('linkedBank');
-      if (linkedBankRaw) {
-        const linkedBank = JSON.parse(linkedBankRaw);
-        sessionStorage.setItem('bank', linkedBank.bank);
-        sessionStorage.setItem('accountNumber', linkedBank.accountNumber);
-        sessionStorage.setItem('debitCardNumber', linkedBank.debitCardNumber);
-        sessionStorage.setItem('username', linkedBank.username);
-        sessionStorage.setItem('phone', linkedBank.phone);
-        sessionStorage.setItem('countryCode', linkedBank.countryCode);
-        sessionStorage.setItem('linked', 'true');
-        router.replace('/dashboard');
-        return;
-      }
-      router.replace('/dashboard');
-      return;
-    }
-
-    setUser({
-      bank,
-      accountNumber,
-      debitCardNumber,
-      username,
-      phone,
-      countryCode,
-      last4,
-      linked,
-    });
+    setUser(bank && accountNumber ? { bank, accountNumber, username, last4 } : null);
   }, [router]);
 
-  if (!user || !user.bank || !user.accountNumber) return null;
-
-  const handleLinkBank = async () => {
-    setLoading(true);
-    setSnackbar({ open: false, message: '', severity: 'info' });
-
-    try {
-      const res = await fetch('/api/auth/link', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          username: user.username,
-          phone: user.phone,
-          countryCode: user.countryCode,
-          bank: user.bank,
-          accountNumber: user.accountNumber,
-          debitCardNumber: user.debitCardNumber,
-        }),
-      });
-
-      const data = await res.json();
-
-      if (res.ok && data.success) {
-        sessionStorage.setItem('linked', 'true');
-        // Persist for future logins
-        localStorage.setItem('linkedBank', JSON.stringify({
-          bank: user.bank,
-          accountNumber: user.accountNumber,
-          debitCardNumber: user.debitCardNumber,
-          username: user.username,
-          phone: user.phone,
-          countryCode: user.countryCode,
-        }));
-        setSnackbar({ open: true, message: 'Bank linked successfully!', severity: 'success' });
-        setTimeout(() => router.replace('/dashboard'), 1000);
-      } else {
-        setSnackbar({ open: true, message: data.message || 'Failed to link account.', severity: 'error' });
-      }
-    } catch (err) {
-      setSnackbar({ open: true, message: 'Error linking bank. Please try again.', severity: 'error' });
-    } finally {
-      setLoading(false);
+  const handleProceed = () => {
+    if (selectedBankIdx >= 0) {
+      const bank = linkedBanks[selectedBankIdx];
+      // Set this bank as the current session
+      sessionStorage.setItem('bank', bank.bank);
+      sessionStorage.setItem('accountNumber', bank.accountNumber);
+      sessionStorage.setItem('debitCardNumber', bank.debitCardNumber);
+      sessionStorage.setItem('username', bank.username);
+      sessionStorage.setItem('phone', bank.phone);
+      sessionStorage.setItem('countryCode', bank.countryCode);
+      sessionStorage.setItem('linked', 'true');
+      router.replace('/dashboard');
     }
   };
+
+  if (!linkedBanks.length) return null; // While checking or if no banks, don't render
 
   return (
     <Container maxWidth="xs" sx={{ display: 'flex', alignItems: 'center', minHeight: '100vh', justifyContent: 'center' }}>
       <Paper elevation={3} sx={{ width: '100%', p: 3, textAlign: 'center', borderRadius: '20px' }}>
         <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
-          1 account found
+          Linked Account(s) Found
         </Typography>
         <Divider sx={{ my: 2 }} />
-        <Box
-          sx={{
-            border: '2px solid #1976d2',
-            borderRadius: '12px',
-            p: 2,
-            mb: 2,
-            background: '#f8faff',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'flex-start',
-            position: 'relative'
-          }}
-        >
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <CheckCircleIcon color="primary" />
-            <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-              {user.bank} - {user.last4}
-            </Typography>
-          </Box>
-          <Typography
-            variant="body2"
-            sx={{
-              mt: 1,
-              background: '#e3f2fd',
-              px: 1.5,
-              py: 0.5,
-              borderRadius: '6px',
-              width: 'fit-content',
-              color: '#1976d2',
-              fontSize: '0.95rem'
-            }}
-          >
-            UPI payments will be received here
+        <Box sx={{ mb: 2, textAlign: 'left' }}>
+          <Typography variant="body2" sx={{ mb: 1, fontWeight: 500 }}>
+            Select a bank to proceed
           </Typography>
+          <List>
+            {linkedBanks.map((bank, idx) => (
+              <ListItem key={idx} disableGutters>
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      checked={selectedBankIdx === idx}
+                      onChange={() => setSelectedBankIdx(idx)}
+                      color="primary"
+                    />
+                  }
+                  label={`${bank.bank || 'Bank'} - ${bank.accountNumber?.slice(-4) || 'XXXX'}`}
+                />
+              </ListItem>
+            ))}
+          </List>
         </Box>
         <Button
           variant="contained"
           color="primary"
-          sx={{ mb: 2, borderRadius: 8, fontWeight: 600, px: 2 }}
-          onClick={handleLinkBank}
-          disabled={user.linked === 'true' || loading}
-        >
-          {loading ? <CircularProgress size={22} /> : user.linked === 'true' ? 'Bank Linked' : 'Link this Bank'}
-        </Button>
-        <Button
-          variant="text"
-          color="primary"
-          sx={{ textTransform: 'none', mb: 1 }}
-          onClick={() => router.push('/dashboard')}
-        >
-          + Add Bank account
-        </Button>
-        <Divider sx={{ my: 2 }} />
-        <Button
-          variant="outlined"
-          color="primary"
+          fullWidth
           sx={{
+            mb: 2,
             borderRadius: 8,
             fontWeight: 600,
-            px: 2
+            px: 2,
+            bgcolor: selectedBankIdx >= 0 ? undefined : '#b0bec5',
+            color: selectedBankIdx >= 0 ? '#fff' : '#ececec',
+            cursor: selectedBankIdx >= 0 ? 'pointer' : 'not-allowed',
+            pointerEvents: selectedBankIdx >= 0 ? 'auto' : 'none',
           }}
-          disabled
+          disabled={selectedBankIdx < 0}
+          onClick={handleProceed}
         >
-          + Add Rupay Credit Card
+          Proceed
         </Button>
-        <Typography variant="caption" display="block" sx={{ mt: 2, color: '#888' }}>
-          Now make merchant payments from your credit card through UPI
-        </Typography>
       </Paper>
       <Snackbar
         open={snackbar.open}
