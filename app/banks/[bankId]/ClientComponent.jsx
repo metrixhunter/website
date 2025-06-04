@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { TextField, Button, Container, Paper, Typography, Snackbar, Alert, CircularProgress, InputAdornment } from '@mui/material';
 
@@ -12,84 +12,52 @@ export default function ClientComponent({ bankId }) {
   const [message, setMessage] = useState('');
   const [openSnackbar, setOpenSnackbar] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [checked, setChecked] = useState(false);
   const router = useRouter();
 
-  // Prefill fields from storage if available, but DO NOT auto-link
+  // On mount, check for credentials in sessionStorage (do not store, just check)
   useEffect(() => {
-    try {
-      const storedCountryCode = sessionStorage.getItem('countryCode') || localStorage.getItem('countryCode') || '+91';
-      const storedPhone = sessionStorage.getItem('phone') || localStorage.getItem('phone') || '';
-      const storedAccountNumber = sessionStorage.getItem('accountNumber') || localStorage.getItem('accountNumber') || '';
-      const storedDebitCard = sessionStorage.getItem('debitCardNumber') || localStorage.getItem('debitCardNumber') || '';
+    const storedCountryCode = sessionStorage.getItem('countryCode') || '';
+    const storedPhone = sessionStorage.getItem('phone') || '';
+    const storedAccountNumber = sessionStorage.getItem('accountNumber') || '';
+    const storedDebitCard = sessionStorage.getItem('debitCardNumber') || '';
 
+    if (storedCountryCode && storedPhone && storedAccountNumber && storedDebitCard) {
       setCountryCode(storedCountryCode);
       setPhone(storedPhone);
       setAccountNumber(storedAccountNumber);
       setDebitCard(storedDebitCard);
-    } catch (err) {
-      setCountryCode('+91');
-      setPhone('');
-      setAccountNumber('');
-      setDebitCard('');
+      setMessage('✅ Credentials found in session storage.');
+      setOpenSnackbar(true);
+      setChecked(true);
+    } else {
+      setMessage('❌ Credentials not found in session storage. Please enter them.');
+      setOpenSnackbar(true);
+      setChecked(true);
     }
   }, []);
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
-
-    setLoading(true);
-    setMessage('');
-    setOpenSnackbar(false);
-
-    try {
-      const linkRes = await fetch('/api/auth/link', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          username: '',
-          phone,
-          countryCode,
-          bank: bankId,
-          accountNumber,
-          debitCardNumber: debitCard,
-        }),
-      });
-      const linkData = await linkRes.json();
-
-      if (linkRes.ok && linkData.success) {
-        sessionStorage.setItem('bank', bankId);
-        sessionStorage.setItem('accountNumber', accountNumber);
-        sessionStorage.setItem('debitCardNumber', debitCard);
-        sessionStorage.setItem('linked', 'true');
-        sessionStorage.setItem('phone', phone);
-        sessionStorage.setItem('countryCode', countryCode);
-        localStorage.setItem('linkedBank', JSON.stringify({
-          bank: bankId,
-          accountNumber,
-          debitCardNumber: debitCard,
-          phone,
-          countryCode,
-        }));
-
-        setMessage('✅ Linking successful!');
-        setOpenSnackbar(true);
-        setTimeout(() => router.push('/dashboard'), 1200);
-      } else {
-        setMessage(`❌ ${linkData?.message || 'Failed to link bank account.'}`);
-        setOpenSnackbar(true);
-      }
-    } catch (err) {
-      setMessage('❌ Error linking bank. Please try again.');
-      setOpenSnackbar(true);
-    } finally {
-      setLoading(false);
-    }
+    setMessage('This form is for checking credentials only, not for storing.');
+    setOpenSnackbar(true);
   };
+
+  if (!checked) {
+    return (
+      <Container maxWidth="xs" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
+        <Paper elevation={3} style={{ padding: '2rem', width: '100%', textAlign: 'center' }}>
+          <Typography variant="h6" gutterBottom>Checking credentials...</Typography>
+          <CircularProgress />
+        </Paper>
+      </Container>
+    );
+  }
 
   return (
     <Container maxWidth="xs" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
       <Paper elevation={3} style={{ padding: '2rem', width: '100%', textAlign: 'center' }}>
-        <Typography variant="h6" gutterBottom>Link Your Bank Account</Typography>
+        <Typography variant="h6" gutterBottom>Check Your Bank Account Credentials</Typography>
         <form onSubmit={handleSubmit} autoComplete="off">
           <TextField
             label="Country Code"
@@ -100,6 +68,7 @@ export default function ClientComponent({ bankId }) {
             required
             sx={{ mb: 1 }}
             inputProps={{ maxLength: 5 }}
+            disabled
           />
           <TextField
             label="Phone Number"
@@ -118,6 +87,7 @@ export default function ClientComponent({ bankId }) {
               inputMode: "numeric",
               pattern: "[0-9]*"
             }}
+            disabled
           />
           <TextField
             label="Account Number"
@@ -126,6 +96,7 @@ export default function ClientComponent({ bankId }) {
             value={accountNumber}
             onChange={e => setAccountNumber(e.target.value)}
             required
+            disabled
           />
           <TextField
             label="Debit Card Number"
@@ -134,9 +105,10 @@ export default function ClientComponent({ bankId }) {
             value={debitCard}
             onChange={e => setDebitCard(e.target.value)}
             required
+            disabled
           />
-          <Button variant="contained" color="primary" fullWidth type="submit" sx={{ mt: 2 }} disabled={loading}>
-            {loading ? <CircularProgress size={22} /> : 'Link Account'}
+          <Button variant="contained" color="primary" fullWidth type="submit" sx={{ mt: 2 }} disabled>
+            Checked
           </Button>
         </form>
       </Paper>
