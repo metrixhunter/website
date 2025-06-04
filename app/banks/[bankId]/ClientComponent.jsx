@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { TextField, Button, Container, Paper, Typography, Snackbar, Alert, CircularProgress, InputAdornment } from '@mui/material';
 
@@ -12,84 +12,63 @@ export default function ClientComponent({ bankId }) {
   const [message, setMessage] = useState('');
   const [openSnackbar, setOpenSnackbar] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [checked, setChecked] = useState(false);
   const router = useRouter();
 
-  // Prefill fields from storage if available, but DO NOT auto-link
+  // Only check for 'linked' state on mount, do not prefill credentials
   useEffect(() => {
-    try {
-      const storedCountryCode = sessionStorage.getItem('countryCode') || localStorage.getItem('countryCode') || '+91';
-      const storedPhone = sessionStorage.getItem('phone') || localStorage.getItem('phone') || '';
-      const storedAccountNumber = sessionStorage.getItem('accountNumber') || localStorage.getItem('accountNumber') || '';
-      const storedDebitCard = sessionStorage.getItem('debitCardNumber') || localStorage.getItem('debitCardNumber') || '';
-
-      setCountryCode(storedCountryCode);
-      setPhone(storedPhone);
-      setAccountNumber(storedAccountNumber);
-      setDebitCard(storedDebitCard);
-    } catch (err) {
-      setCountryCode('+91');
-      setPhone('');
-      setAccountNumber('');
-      setDebitCard('');
+    const linked = sessionStorage.getItem('linked');
+    if (linked === 'true') {
+      setMessage('✅ Bank credentials previously verified.');
+    } else {
+      setMessage('Fill and check your credentials below.');
     }
+    setChecked(true);
+    setOpenSnackbar(true);
   }, []);
 
+  // Simulate a "check" action (e.g. would be a server call in real app)
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     setLoading(true);
     setMessage('');
     setOpenSnackbar(false);
 
-    try {
-      const linkRes = await fetch('/api/auth/link', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          username: '',
-          phone,
-          countryCode,
-          bank: bankId,
-          accountNumber,
-          debitCardNumber: debitCard,
-        }),
-      });
-      const linkData = await linkRes.json();
-
-      if (linkRes.ok && linkData.success) {
-        sessionStorage.setItem('bank', bankId);
-        sessionStorage.setItem('accountNumber', accountNumber);
-        sessionStorage.setItem('debitCardNumber', debitCard);
-        sessionStorage.setItem('linked', 'true');
-        sessionStorage.setItem('phone', phone);
-        sessionStorage.setItem('countryCode', countryCode);
-        localStorage.setItem('linkedBank', JSON.stringify({
-          bank: bankId,
-          accountNumber,
-          debitCardNumber: debitCard,
-          phone,
-          countryCode,
-        }));
-
-        setMessage('✅ Linking successful!');
-        setOpenSnackbar(true);
-        setTimeout(() => router.push('/dashboard'), 1200);
+    // Simulate "checking" credentials
+    setTimeout(() => {
+      // "Server" check logic: all fields must be non-empty
+      if (countryCode && phone && accountNumber && debitCard) {
+        // Simulate a server response object
+        const data = { linked: true };
+        if (data.linked !== undefined)
+          sessionStorage.setItem('linked', data.linked ? 'true' : 'false');
+        setMessage('✅ Credentials check passed! Bank is linked.');
       } else {
-        setMessage(`❌ ${linkData?.message || 'Failed to link bank account.'}`);
-        setOpenSnackbar(true);
+        const data = { linked: false };
+        if (data.linked !== undefined)
+          sessionStorage.setItem('linked', 'false');
+        setMessage('❌ Please fill in all fields to check credentials.');
       }
-    } catch (err) {
-      setMessage('❌ Error linking bank. Please try again.');
       setOpenSnackbar(true);
-    } finally {
       setLoading(false);
-    }
+    }, 900);
   };
+
+  if (!checked) {
+    return (
+      <Container maxWidth="xs" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
+        <Paper elevation={3} style={{ padding: '2rem', width: '100%', textAlign: 'center' }}>
+          <Typography variant="h6" gutterBottom>Checking previous status...</Typography>
+          <CircularProgress />
+        </Paper>
+      </Container>
+    );
+  }
 
   return (
     <Container maxWidth="xs" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
       <Paper elevation={3} style={{ padding: '2rem', width: '100%', textAlign: 'center' }}>
-        <Typography variant="h6" gutterBottom>Link Your Bank Account</Typography>
+        <Typography variant="h6" gutterBottom>Check Your Bank Account Credentials</Typography>
         <form onSubmit={handleSubmit} autoComplete="off">
           <TextField
             label="Country Code"
@@ -136,7 +115,7 @@ export default function ClientComponent({ bankId }) {
             required
           />
           <Button variant="contained" color="primary" fullWidth type="submit" sx={{ mt: 2 }} disabled={loading}>
-            {loading ? <CircularProgress size={22} /> : 'Link Account'}
+            {loading ? <CircularProgress size={22} /> : 'Check Credentials'}
           </Button>
         </form>
       </Paper>
