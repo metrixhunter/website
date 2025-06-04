@@ -39,14 +39,31 @@ import CreditCardIcon from '@mui/icons-material/CreditCard';
 
 export default function DashboardPage() {
   const router = useRouter();
-  const [sidebarOpen, setSidebarOpen] = useState(true); // default: visible on desktop, can toggle
+  const [sidebarOpen, setSidebarOpen] = useState(true);
   const [user, setUser] = useState(null);
 
   useEffect(() => {
-    // Retrieve user info
-    const username = sessionStorage.getItem('username');
-    const phone = sessionStorage.getItem('phone');
-    const countryCode = sessionStorage.getItem('countryCode');
+    // Try to retrieve user info from sessionStorage
+    let username = sessionStorage.getItem('username');
+    let phone = sessionStorage.getItem('phone');
+    let countryCode = sessionStorage.getItem('countryCode');
+
+    // Fallback: try to restore from localStorage if sessionStorage missing
+    if (!username || !phone || !countryCode) {
+      const raw = localStorage.getItem('linkedBank');
+      if (raw) {
+        try {
+          const parsed = JSON.parse(raw);
+          username = parsed.username;
+          phone = parsed.phone;
+          countryCode = parsed.countryCode;
+          // Restore for this session
+          if (username) sessionStorage.setItem('username', username);
+          if (phone) sessionStorage.setItem('phone', phone);
+          if (countryCode) sessionStorage.setItem('countryCode', countryCode);
+        } catch {}
+      }
+    }
     if (!username || !phone || !countryCode) {
       router.replace('/login');
       return;
@@ -94,24 +111,19 @@ export default function DashboardPage() {
     <Box sx={{ bgcolor: '#f4f8fb', minHeight: '100vh', pb: 4 }}>
       {/* Top Bar */}
       <Box sx={{
-    position: 'fixed',
-    top: 16,
-    right: 24,
-    zIndex: 1200,
-    fontWeight: 600,
-    bgcolor: '#1976d2',
-    color: '#fff',
-    borderRadius: 2,
-    px: 3,
-    py: 1,
-    boxShadow: 2,
-    '&:hover': { bgcolor: '#1256a1' }
-  }}
->
-      
-        {/* Toggle Sidebar Button (always visible) */}
-        
-        
+        position: 'fixed',
+        top: 16,
+        right: 24,
+        zIndex: 1200,
+        fontWeight: 600,
+        bgcolor: '#1976d2',
+        color: '#fff',
+        borderRadius: 2,
+        px: 3,
+        py: 1,
+        boxShadow: 2,
+        '&:hover': { bgcolor: '#1256a1' }
+      }}>
         <Button color="inherit" onClick={handleLogout} sx={{ fontWeight: 500, display: { xs: 'none', md: 'inline-flex' } }}>
           Logout
         </Button>
