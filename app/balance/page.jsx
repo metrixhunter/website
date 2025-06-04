@@ -61,7 +61,7 @@ export default function BalancePage() {
     const bank = sessionStorage.getItem('bank');
     const accountNumber = sessionStorage.getItem('accountNumber');
     if (!username || !bank || !accountNumber) {
-      router.replace('/dashboard');
+      router.replace('/balance');
       return;
     }
     setUser({ username, bank, accountNumber });
