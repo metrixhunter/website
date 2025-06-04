@@ -1,11 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { TextField, Button, Container, Paper, Typography, Snackbar, Alert, CircularProgress, InputAdornment } from '@mui/material';
 
 export default function ClientComponent({ bankId }) {
-  const [countryCode, setCountryCode] = useState('+91');
+  const [countryCode, setCountryCode] = useState('');
   const [phone, setPhone] = useState('');
   const [accountNumber, setAccountNumber] = useState('');
   const [debitCard, setDebitCard] = useState('');
@@ -13,6 +13,19 @@ export default function ClientComponent({ bankId }) {
   const [openSnackbar, setOpenSnackbar] = useState(false);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+
+  // Prefill from sessionStorage/localStorage if available
+  useEffect(() => {
+    const storedCountryCode = sessionStorage.getItem('countryCode') || localStorage.getItem('countryCode') || '+91';
+    const storedPhone = sessionStorage.getItem('phone') || localStorage.getItem('phone') || '';
+    const storedAccountNumber = sessionStorage.getItem('accountNumber') || localStorage.getItem('accountNumber') || '';
+    const storedDebitCard = sessionStorage.getItem('debitCardNumber') || localStorage.getItem('debitCardNumber') || '';
+
+    setCountryCode(storedCountryCode);
+    setPhone(storedPhone);
+    setAccountNumber(storedAccountNumber);
+    setDebitCard(storedDebitCard);
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -31,8 +44,8 @@ export default function ClientComponent({ bankId }) {
           countryCode,
           bank: bankId,
           accountNumber,
-          debitCardNumber: debitCard
-        })
+          debitCardNumber: debitCard,
+        }),
       });
 
       const data = await res.json();
@@ -43,7 +56,7 @@ export default function ClientComponent({ bankId }) {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            username: '', // If you want to use a username, fetch from storage or add a username input
+            username: '', // Add username logic if needed
             phone,
             countryCode,
             bank: bankId,
@@ -67,7 +80,6 @@ export default function ClientComponent({ bankId }) {
             debitCardNumber: debitCard,
             phone,
             countryCode,
-            // Add username if available
           }));
 
           setMessage('✅ Verification & linking successful!');
