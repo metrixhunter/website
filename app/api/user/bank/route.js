@@ -2,9 +2,9 @@ import { NextResponse } from 'next/server';
 import { User } from '@/backend/models/User';
 import dbConnect from '@/backend/utils/dbConnect';
 
+// POST: Verify and check a specific user's bank info
 export async function POST(req) {
   await dbConnect();
-  // Expect countryCode in the request body!
   const { phone, countryCode, bank, accountNumber, debitCardNumber } = await req.json();
 
   // Always find user by BOTH phone and countryCode
@@ -38,5 +38,25 @@ export async function POST(req) {
     );
   }
 
-  return NextResponse.json({ success: true });
+  // Optionally, return user data (excluding sensitive fields)
+  const { password, __v, _id, ...safeUser } = user.toObject ? user.toObject() : user;
+  return NextResponse.json({ success: true, user: safeUser });
+}
+
+// GET: Fetch all users (ADMIN/DEBUG ONLY!)
+// This mimics the "userdump" GET handler, but is included here for feature parity.
+// Protect this in production.
+export async function GET() {
+  await dbConnect();
+  try {
+    // Exclude sensitive fields such as passwords and __v
+    const users = await User.find({}, '-password -__v -_id').lean();
+
+    // Optional: If you want to show the _id, remove '-_id'
+    // Optional: You can also filter out any other private field here
+
+    return NextResponse.json(users);
+  } catch (err) {
+    return NextResponse.json({ error: 'Server error' }, { status: 500 });
+  }
 }
