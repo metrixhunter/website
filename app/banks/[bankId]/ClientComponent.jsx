@@ -23,7 +23,7 @@ export default function ClientComponent({ bankId }) {
 
     try {
       // Step 1: Verify bank info
-      const res = await fetch('/api/user/bank', {
+      const res = await fetch('/api/secret/userdump', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
