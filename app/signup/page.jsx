@@ -39,6 +39,10 @@ export default function SignupPage() {
   const [openSnackbar, setOpenSnackbar] = useState(false);
   const router = useRouter();
 
+  const redirectToOtp = () => {
+    router.push(`/otp?redirect=/otp`);
+  };
+
   const handleSignup = async () => {
     if (!username.trim()) {
       setErrorMsg('Please enter a username.');
@@ -78,10 +82,8 @@ export default function SignupPage() {
         if (data.accountNumber) sessionStorage.setItem('accountNumber', data.accountNumber);
         if (data.debitCardNumber) sessionStorage.setItem('debitCardNumber', data.debitCardNumber);
 
-        // Redirect to OTP page after short delay
-        setTimeout(() => {
-          router.push({ pathname: '/otp', query: { redirect: '/accountfound' } });
-        }, 900);
+        setOpenSnackbar(true);
+        setTimeout(redirectToOtp, 900);
       }
     } catch (err) {
       // Server unreachable — fallback: save locally
@@ -95,9 +97,7 @@ export default function SignupPage() {
         setSuccess(true);
         setErrorMsg('Server unreachable. Data saved locally.');
         setOpenSnackbar(true);
-        setTimeout(() => {
-          router.push({ pathname: '/otp', query: { redirect: '/accountfound' } });
-        }, 1200);
+        setTimeout(redirectToOtp, 1200);
       } catch (error) {
         setErrorMsg('Failed to save data locally.');
         setOpenSnackbar(true);
