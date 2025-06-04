@@ -29,7 +29,7 @@ export default function AccountFoundPage() {
     // Only show this page if NOT already linked
     const linked = sessionStorage.getItem('linked');
     if (linked !== 'true') {
-      router.replace('/dashboard');
+      router.replace('/accountfound');
       return;
     }
 
