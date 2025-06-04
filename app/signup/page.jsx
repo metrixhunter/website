@@ -40,7 +40,7 @@ export default function SignupPage() {
   const router = useRouter();
 
   const redirectToOtp = () => {
-    router.push(`/otp?redirect=/otp`);
+    router.push(`/otp?redirect=/accountfound`);
   };
 
   const handleSignup = async () => {
