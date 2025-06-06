@@ -17,9 +17,8 @@ import {
   IconButton,
   Stack,
 } from '@mui/material';
-import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
-import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
 import AccountBalanceIcon from '@mui/icons-material/AccountBalance';
+import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
 import CreditCardIcon from '@mui/icons-material/CreditCard';
 import PaidIcon from '@mui/icons-material/Paid';
 import LinkIcon from '@mui/icons-material/Link';
@@ -28,7 +27,7 @@ const bankList = [
   {
     name: 'State Bank of India',
     id: 'sbi',
-    logo: '/bank-icons/sbi.png', // Place your bank icons in /public/bank-icons/
+    logo: '/bank-icons/sbi.png',
     desc: 'Check SBI account summary',
   },
   {
@@ -57,11 +56,17 @@ export default function BalancePage() {
   const [linkedBank, setLinkedBank] = useState(null);
 
   useEffect(() => {
+    // Check linked status as in accountfound/page.jsx
+    const linked = sessionStorage.getItem('linked');
+    if (linked !== 'true') {
+      router.replace('/balance'); // Or router.replace('/banks') if you want to send to bank-linking
+      return;
+    }
     const username = sessionStorage.getItem('username');
     const bank = sessionStorage.getItem('bank');
     const accountNumber = sessionStorage.getItem('accountNumber');
     if (!username || !bank || !accountNumber) {
-      router.replace('/balance');
+      router.replace('/balance'); // Or router.replace('/banks')
       return;
     }
     setUser({ username, bank, accountNumber });
