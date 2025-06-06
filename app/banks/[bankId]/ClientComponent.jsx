@@ -40,12 +40,12 @@ export default function ClientComponent({ bankId }) {
       if (countryCode && phone && accountNumber && debitCard) {
         // Simulate a server response object
         const data = { linked: true };
-        if (data.linked !== undefined)
+        if (data.linked !== false)
           sessionStorage.setItem('linked', data.linked ? 'true' : 'false');
         setMessage('✅ Credentials check passed! Bank is linked.');
       } else {
         const data = { linked: false };
-        if (data.linked !== undefined)
+        if (data.linked !== false)
           sessionStorage.setItem('linked', 'false');
         setMessage('❌ Please fill in all fields to check credentials.');
       }
