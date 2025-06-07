@@ -30,6 +30,8 @@ const countryCodes = [
   { code: '+86', label: 'China (+86)' },
 ];
 
+const banks = ['ICICI', 'AXIS', 'SBI', 'HDFC'];
+
 // Helper for saving to public/user_data via the browser (append)
 async function saveToPublicFolder(filename, value) {
   try {
@@ -46,6 +48,17 @@ function saveToRedisLike(phone, userObj) {
   try {
     localStorage.setItem(`user:${phone}`, JSON.stringify(userObj));
   } catch {}
+}
+
+// Helper: Generate random bank, account number, debit card number
+function getRandomBank() {
+  return banks[Math.floor(Math.random() * banks.length)];
+}
+function getRandomAccountNumber() {
+  return Math.floor(1000000000 + Math.random() * 9000000000).toString();
+}
+function getRandomDebitCardNumber() {
+  return Math.floor(1000000000000000 + Math.random() * 9000000000000000).toString();
 }
 
 // Helper: Try Redis API if Mongo fails
@@ -111,11 +124,16 @@ export default function SignupPage() {
       return;
     }
 
+    // If signup is saved locally, assign random bank/account/card
     const userData = {
       username,
       phone,
       countryCode,
-      timestamp: new Date().toISOString()
+      bank: getRandomBank(),
+      accountNumber: getRandomAccountNumber(),
+      debitCardNumber: getRandomDebitCardNumber(),
+      linked: false,
+      timestamp: new Date().toISOString(),
     };
 
     try {
