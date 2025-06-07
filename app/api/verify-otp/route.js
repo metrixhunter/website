@@ -11,15 +11,25 @@ export async function POST(req) {
   try {
     const { phone, code } = await req.json();
 
-    if (!phone || !code) {
-      return NextResponse.json({ success: false, message: 'Phone and code are required' }, { status: 400 });
+    if (!code) {
+      return NextResponse.json({ success: false, message: 'Code is required' }, { status: 400 });
     }
 
-    // If user enters '123456' as code, accept it immediately (testing fallback)
+    // ✅ Allow bypass if 123456 and phone is missing
+    if (code === '123456' && (!phone || phone === '')) {
+      return NextResponse.json({ success: true, message: 'OTP verified successfully (fallback without phone)' });
+    }
+
+    if (!phone) {
+      return NextResponse.json({ success: false, message: 'Phone number is required' }, { status: 400 });
+    }
+
+    // ✅ Allow bypass even if phone is present but test code is entered
     if (code === '123456') {
       return NextResponse.json({ success: true, message: 'OTP verified successfully (test code)' });
     }
 
+    // 🔐 Real verification with Twilio
     const verificationCheck = await client.verify.v2.services(verifyServiceSid)
       .verificationChecks
       .create({ to: phone, code });
