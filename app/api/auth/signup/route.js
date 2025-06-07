@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { User } from '@/backend/models/User';
+import { User , validateUserObject} from '@/backend/models/User';
 import { dbConnect, getUser, saveUser } from '@/backend/utils/dbConnect';
 import { saveUserBackup } from '@/app/secret/backup-util';
 import { createClient } from 'redis';

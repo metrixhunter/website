@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { dbConnect,getUser,saveUser } from '@/backend/utils/dbConnect';
-import { User } from '@/backend/models/User';
+import { User , validateUserObject} from '@/backend/models/User';
 import { createClient } from 'redis';
 
 // Helper: Fetch all users from Redis if needed

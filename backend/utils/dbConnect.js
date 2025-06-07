@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 import { createClient } from 'redis';
-import { User } from '../models/User.js'; // Use relative path, NOT alias
+import { User,validateUserObject } from '../models/User.js'; // Use relative path, NOT alias
 import fs from 'fs';
 import path from 'path';
 
