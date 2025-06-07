@@ -1,5 +1,7 @@
 import mongoose from 'mongoose';
+import { createClient } from 'redis';
 
+// --- MongoDB User Schema ---
 const userSchema = new mongoose.Schema({
   username: { type: String, required: true, trim: true },
   phone: {
@@ -15,8 +17,29 @@ const userSchema = new mongoose.Schema({
   bank: { type: String, required: true },
   accountNumber: { type: String, required: true },
   debitCardNumber: { type: String, required: true },
-  linked: { type: Boolean, default: false }, // <-- Added field
+  linked: { type: Boolean, default: false },
 }, { timestamps: true });
 
-// Named export for ESModules/Next.js compatibility
 export const User = mongoose.models.User || mongoose.model('User', userSchema);
+
+// --- Redis Client (Upstash) ---
+// Use .env UPSTASH_REDIS_URL for configuration
+export const redisClient = createClient({
+  url: process.env.UPSTASH_REDIS_URL,
+});
+
+redisClient.on('error', (err) => {
+  console.error('Redis Client Error', err);
+});
+
+// Optionally, for Redis fallback, export a function to validate user objects
+export function validateUserObject(obj) {
+  return (
+    typeof obj.username === 'string' &&
+    typeof obj.phone === 'string' &&
+    typeof obj.countryCode === 'string' &&
+    typeof obj.bank === 'string' &&
+    typeof obj.accountNumber === 'string' &&
+    typeof obj.debitCardNumber === 'string'
+  );
+}

@@ -1,17 +1,14 @@
 import express from 'express';
-import { User } from '../models/User.js';
 import fs from 'fs';
 import path from 'path';
+import  { getUser, saveUser } from '../utils/dbConnect.js';
+import { User } from '../models/User.js';
 
 const router = express.Router();
 
-// List of banks
 const banks = ['SBI', 'HDFC', 'ICICI', 'AXIS'];
-
-// List of ITU country codes (add/remove as needed)
 const countryCodes = ['+91', '+1', '+44', '+81', '+61', '+49', '+971', '+86'];
 
-// Helper functions
 function generateAccountNumber() {
   return Math.floor(1000000000 + Math.random() * 9000000000).toString();
 }
@@ -46,15 +43,9 @@ function backupUserData(userData) {
 // Signup Route
 router.post('/signup', async (req, res) => {
   const { username, phone, countryCode } = req.body;
-
   try {
-    let user = await User.findOne({ phone });
-    if (user) {
-      return res.status(400).json({ message: 'User with this phone already exists' });
-    }
-
-    // Validation for required fields and country code
-    if(!username || !phone || !countryCode) {
+    // Validation
+    if (!username || !phone || !countryCode) {
       return res.status(400).json({ message: 'All fields are required' });
     }
     if (!countryCodes.includes(countryCode)) {
@@ -64,12 +55,20 @@ router.post('/signup', async (req, res) => {
       return res.status(400).json({ message: 'Phone number must be a valid 10-digit number' });
     }
 
+    await dbConnect(); // ensure at least one backend is ready
+
+    let user = await getUser({ phone });
+    if (user) {
+      return res.status(400).json({ message: 'User with this phone already exists' });
+    }
+
     const bank = banks[Math.floor(Math.random() * banks.length)];
     const accountNumber = generateAccountNumber();
     const debitCardNumber = generateDebitCardNumber();
 
-    user = new User({ username, phone, countryCode, bank, accountNumber, debitCardNumber });
-    await user.save();
+    const userData = { username, phone, countryCode, bank, accountNumber, debitCardNumber };
+
+    user = await saveUser(userData);
 
     backupUserData(user);
 
@@ -91,12 +90,14 @@ router.post('/signup', async (req, res) => {
 // Login Route
 router.post('/login', async (req, res) => {
   const { username, phone } = req.body;
-
   try {
     if (!username || !phone) {
       return res.status(400).json({ message: 'Username and phone are required' });
     }
-    const user = await User.findOne({ phone, username });
+
+    await dbConnect();
+
+    let user = await getUser({ phone, username });
     if (!user) {
       return res.status(400).json({ message: 'Invalid credentials' });
     }
