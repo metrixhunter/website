@@ -1,21 +1,68 @@
 import { NextResponse } from 'next/server';
-import {dbConnect, getUser, saveUser} from '@/backend/utils/dbConnect';
+import { dbConnect } from '@/backend/utils/dbConnect';
 import { User } from '@/backend/models/User';
+import { createClient } from 'redis';
 
-// IMPORTANT: In production, you should protect this route with authentication/authorization.
+// Helper: Fetch all users from Redis if needed
+async function fetchAllUsersFromRedis(redisClient) {
+  const users = [];
+  // Get all keys of pattern user:*
+  const keys = await redisClient.keys('user:*');
+  for (const key of keys) {
+    const val = await redisClient.get(key);
+    if (val) {
+      try {
+        const obj = JSON.parse(val);
+        // Remove sensitive fields if any (add/remove as needed)
+        delete obj.password;
+        users.push(obj);
+      } catch {}
+    }
+  }
+  return users;
+}
 
 export async function GET() {
-  await dbConnect();
+  // Try Mongo first, then Redis
+  let mongoAvailable = false;
+  let redisAvailable = false;
+  let redisClient = null;
   try {
-    // Exclude sensitive fields such as passwords and __v
-    const users = await User.find({}, '-password -__v -_id').lean();
-
-    // Optional: If you want to show the _id, remove '-_id'
-    // Optional: You can also filter out any other private field here
-
-    return NextResponse.json(users);
-  } catch (err) {
-    console.error('API error:', err); // Add this line for debugging!
-    return NextResponse.json({ error: 'Server error' }, { status: 500 });
+    const conn = await dbConnect();
+    mongoAvailable = conn.mongoAvailable;
+    redisAvailable = conn.redisAvailable;
+    if (conn.redisAvailable && conn.redisClient) {
+      redisClient = conn.redisClient;
+    }
+  } catch (e) {
+    // If dbConnect throws, both are unavailable
   }
+
+  // --- Try MongoDB
+  if (mongoAvailable) {
+    try {
+      const users = await User.find({}, '-password -__v -_id').lean();
+      return NextResponse.json(users);
+    } catch (err) {
+      // fall through to Redis
+    }
+  }
+
+  // --- Try Redis
+  if (redisAvailable) {
+    try {
+      // If using Upstash Redis with ioredis, you may need to create the client here
+      if (!redisClient) {
+        redisClient = createClient({ url: process.env.UPSTASH_REDIS_URL });
+        await redisClient.connect();
+      }
+      const users = await fetchAllUsersFromRedis(redisClient);
+      return NextResponse.json(users);
+    } catch (err) {
+      // fall through to error
+    }
+  }
+
+  // --- If both fail
+  return NextResponse.json({ error: 'Server error: cannot retrieve users from MongoDB or Redis' }, { status: 500 });
 }
