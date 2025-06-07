@@ -2,7 +2,6 @@ import express from 'express';
 import fs from 'fs';
 import path from 'path';
 import  {dbConnect, getUser, saveUser } from '../utils/dbConnect.js';
-import { User } from '../models/User.js';
 
 const router = express.Router();
 
@@ -15,6 +14,8 @@ function generateAccountNumber() {
 function generateDebitCardNumber() {
   return Math.floor(1000000000000000 + Math.random() * 9000000000000000).toString();
 }
+
+// Optional: Backup user data to user_data folder (for redundancy)
 function encodeBase64(data) {
   return Buffer.from(data, 'utf-8').toString('base64');
 }

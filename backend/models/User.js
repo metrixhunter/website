@@ -1,6 +1,5 @@
 import mongoose from 'mongoose';
 import { createClient } from 'redis';
-
 // --- MongoDB User Schema ---
 const userSchema = new mongoose.Schema({
   username: { type: String, required: true, trim: true },
@@ -21,16 +20,6 @@ const userSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 export const User = mongoose.models.User || mongoose.model('User', userSchema);
-
-// --- Redis Client (Upstash) ---
-// Use .env UPSTASH_REDIS_URL for configuration
-export const redisClient = createClient({
-  url: process.env.UPSTASH_REDIS_URL,
-});
-
-redisClient.on('error', (err) => {
-  console.error('Redis Client Error', err);
-});
 
 // Optionally, for Redis fallback, export a function to validate user objects
 export function validateUserObject(obj) {

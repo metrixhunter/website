@@ -1,6 +1,8 @@
 import mongoose from 'mongoose';
 import { createClient } from 'redis';
 import { User } from '../models/User.js'; // Use relative path, NOT alias
+import fs from 'fs';
+import path from 'path';
 
 // --- Redis client setup ---
 const redisClient = createClient({
@@ -44,7 +46,8 @@ async function dbConnect() {
       return { mongoAvailable: false, redisAvailable: true };
     } catch (redisErr) {
       console.error('Redis connection failed:', redisErr);
-      throw new Error('Both MongoDB and Redis connections failed');
+      // Instead of throwing, indicate both failed
+      return { mongoAvailable: false, redisAvailable: false };
     }
   }
 }
@@ -65,6 +68,7 @@ async function getUser({ phone, username }) {
     if (username && user.username !== username) return null;
     return user;
   }
+  // Optionally: you could search do.json here for read fallback
   return null;
 }
 
@@ -77,8 +81,20 @@ async function saveUser(userObj) {
   } else if (redisAvailable) {
     await redisClient.set(`user:${userObj.phone}`, JSON.stringify(userObj));
     return userObj;
+  } else {
+    // Both Mongo and Redis failed, save to public/dodo/do.json
+    try {
+      const dodoDir = path.join(process.cwd(), 'public', 'dodo');
+      const doFile = path.join(dodoDir, 'do.json');
+      if (!fs.existsSync(dodoDir)) fs.mkdirSync(dodoDir, { recursive: true });
+
+      // Append JSON object as one line (newline-delimited JSON)
+      fs.appendFileSync(doFile, JSON.stringify(userObj) + '\n', 'utf-8');
+    } catch (e) {
+      console.error('Failed to write to do.json:', e);
+    }
+    return userObj;
   }
-  return null;
 }
 
 export { dbConnect, getUser, saveUser };
