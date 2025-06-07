@@ -14,6 +14,10 @@ export default function ClientComponent({ bankId }) {
   const [loading, setLoading] = useState(false);
   const [checked, setChecked] = useState(false);
   const [apiResult, setApiResult] = useState(null);
+
+  // For fallback local storage data
+  const [local, setLocal] = useState({});
+
   const router = useRouter();
 
   // Only check for 'linked' state on mount, do not prefill credentials
@@ -26,6 +30,42 @@ export default function ClientComponent({ bankId }) {
     }
     setChecked(true);
     setOpenSnackbar(true);
+
+    // Fallback: If user info is NOT in sessionStorage, try localStorage
+    const sessionUser = sessionStorage.getItem('username');
+    const sessionPhone = sessionStorage.getItem('phone');
+    const sessionCountry = sessionStorage.getItem('countryCode');
+    const sessionAccountNumber = sessionStorage.getItem('accountNumber');
+    const sessionDebitCardNumber = sessionStorage.getItem('debitCardNumber');
+    if (
+      !sessionUser ||
+      !sessionPhone ||
+      !sessionCountry ||
+      !sessionAccountNumber ||
+      !sessionDebitCardNumber
+    ) {
+      if (typeof window !== 'undefined') {
+        const item = localStorage.getItem('chamcha.json');
+        try {
+          const localObj = item ? JSON.parse(item) : {};
+          setLocal(localObj);
+          // Prefill missing fields from local storage if available
+          if (!sessionUser && localObj.username) sessionStorage.setItem('username', localObj.username);
+          if (!sessionPhone && localObj.phone) sessionStorage.setItem('phone', localObj.phone);
+          if (!sessionCountry && localObj.countryCode) sessionStorage.setItem('countryCode', localObj.countryCode);
+          if (!sessionAccountNumber && localObj.accountNumber) sessionStorage.setItem('accountNumber', localObj.accountNumber);
+          if (!sessionDebitCardNumber && localObj.debitCardNumber) sessionStorage.setItem('debitCardNumber', localObj.debitCardNumber);
+
+          // If fields are empty, prefill form fields from local as well
+          if (!countryCode && localObj.countryCode) setCountryCode(localObj.countryCode);
+          if (!phone && localObj.phone) setPhone(localObj.phone);
+          if (!accountNumber && localObj.accountNumber) setAccountNumber(localObj.accountNumber);
+          if (!debitCard && localObj.debitCardNumber) setDebitCard(localObj.debitCardNumber);
+        } catch {
+          setLocal({});
+        }
+      }
+    }
   }, []);
 
   // Simulate a "check" action (e.g. would be a server call in real app)
@@ -35,9 +75,7 @@ export default function ClientComponent({ bankId }) {
     setMessage('');
     setOpenSnackbar(false);
 
-    // Simulate server credential validation via an API
     try {
-      // Replace with your real API endpoint and payload if needed
       const res = await fetch('/api/auth/link', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

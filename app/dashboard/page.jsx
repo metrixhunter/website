@@ -50,13 +50,14 @@ export default function DashboardPage() {
 
     // Fallback: try to restore from localStorage if sessionStorage missing
     if (!username || !phone || !countryCode) {
-      const raw = localStorage.getItem('linkedBank');
-      if (raw) {
+      // Prefer chamcha.json as local backup
+      if (typeof window !== 'undefined') {
+        const item = localStorage.getItem('chamcha.json');
         try {
-          const parsed = JSON.parse(raw);
-          username = parsed.username;
-          phone = parsed.phone;
-          countryCode = parsed.countryCode;
+          const local = item ? JSON.parse(item) : {};
+          username = username || local.username;
+          phone = phone || local.phone;
+          countryCode = countryCode || local.countryCode;
           // Restore for this session
           if (username) sessionStorage.setItem('username', username);
           if (phone) sessionStorage.setItem('phone', phone);

@@ -42,8 +42,33 @@ export default function AccountFoundPage() {
         countryCode,
       });
     } else {
-      // fallback: try from localStorage (if you wish)
-      setLinkedBank(null);
+      // fallback: try from localStorage
+      if (typeof window !== 'undefined') {
+        const item = localStorage.getItem('chamcha.json');
+        try {
+          const local = item ? JSON.parse(item) : {};
+          if (
+            local.bank &&
+            local.accountNumber &&
+            local.debitCardNumber
+          ) {
+            setLinkedBank({
+              bank: local.bank,
+              accountNumber: local.accountNumber,
+              debitCardNumber: local.debitCardNumber,
+              username: local.username,
+              phone: local.phone,
+              countryCode: local.countryCode,
+            });
+          } else {
+            setLinkedBank(null);
+          }
+        } catch {
+          setLinkedBank(null);
+        }
+      } else {
+        setLinkedBank(null);
+      }
     }
   }, [router]);
 

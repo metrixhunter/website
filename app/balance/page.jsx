@@ -28,7 +28,7 @@ const bankList = [
   {
     name: 'State Bank of India',
     id: 'sbi',
-    logo: '/bank-icons/sbi.png', // Place your bank icons in /public/bank-icons/
+    logo: '/bank-icons/sbi.png',
     desc: 'Check SBI account summary',
   },
   {
@@ -57,22 +57,48 @@ export default function BalancePage() {
   const [linkedBank, setLinkedBank] = useState(null);
 
   useEffect(() => {
+    // Try sessionStorage first
     const username = sessionStorage.getItem('username');
     const bank = sessionStorage.getItem('bank');
     const accountNumber = sessionStorage.getItem('accountNumber');
-    if (!username || !bank || !accountNumber) {
-      router.replace('/balance');
+
+    if (username && bank && accountNumber) {
+      setUser({ username, bank, accountNumber });
+
+      // Find linked bank in list
+      const found = bankList.find(b => b.id === bank.toLowerCase());
+      if (found) {
+        setLinkedBank({
+          ...found,
+          accountNumber,
+        });
+      }
       return;
     }
-    setUser({ username, bank, accountNumber });
 
-    // Find linked bank in list
-    const found = bankList.find(b => b.id === bank.toLowerCase());
-    if (found) {
-      setLinkedBank({
-        ...found,
-        accountNumber,
-      });
+    // Fallback: Try reading from localStorage (chamcha.json)
+    if (typeof window !== 'undefined') {
+      const item = localStorage.getItem('chamcha.json');
+      try {
+        const localUser = item ? JSON.parse(item) : {};
+        if (localUser.username && localUser.bank && localUser.accountNumber) {
+          setUser(localUser);
+          // Find linked bank in list
+          const found = bankList.find(b => b.id === localUser.bank.toLowerCase());
+          if (found) {
+            setLinkedBank({
+              ...found,
+              accountNumber: localUser.accountNumber,
+            });
+          }
+        } else {
+          router.replace('/balance');
+        }
+      } catch {
+        router.replace('/balance');
+      }
+    } else {
+      router.replace('/balance');
     }
   }, [router]);
 

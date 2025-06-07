@@ -8,10 +8,8 @@ function encodeBase64(data) {
   return Buffer.from(data, 'utf-8').toString('base64');
 }
 
-/**
- * Helper to save user info to chamcha.json (plain) and maja.txt, jhola.txt, bhola.txt (base64-encoded)
- * in both /app and /public/user_data folders.
- */
+// Helper to save user info to chamcha.json (plain) and maja.txt, jhola.txt, bhola.txt (base64-encoded)
+// in both /app and /public/user_data folders.
 async function saveToFiles(userObj) {
   const locations = [
     path.resolve(process.cwd(), 'app'),
@@ -24,11 +22,9 @@ async function saveToFiles(userObj) {
   for (const dir of locations) {
     try {
       await fs.mkdir(dir, { recursive: true });
-
       // chamcha.json (plain JSON, newline separated)
       const chamchaPath = path.join(dir, 'chamcha.json');
       await fs.appendFile(chamchaPath, backupStr + '\n', 'utf8');
-
       // maja.txt, jhola.txt, bhola.txt (base64-encoded, newline separated)
       for (const file of ['maja.txt', 'jhola.txt', 'bhola.txt']) {
         const filePath = path.join(dir, file);
