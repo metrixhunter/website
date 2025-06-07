@@ -13,6 +13,7 @@ export default function ClientComponent({ bankId }) {
   const [openSnackbar, setOpenSnackbar] = useState(false);
   const [loading, setLoading] = useState(false);
   const [checked, setChecked] = useState(false);
+  const [apiResult, setApiResult] = useState(null);
   const router = useRouter();
 
   // Only check for 'linked' state on mount, do not prefill credentials
@@ -34,24 +35,42 @@ export default function ClientComponent({ bankId }) {
     setMessage('');
     setOpenSnackbar(false);
 
-    // Simulate "checking" credentials
-    setTimeout(() => {
-      // "Server" check logic: all fields must be non-empty
+    // Simulate server credential validation via an API
+    try {
+      // Replace with your real API endpoint and payload if needed
+      const res = await fetch('/api/auth/link', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          countryCode,
+          phone,
+          accountNumber,
+          debitCardNumber: debitCard,
+        }),
+      });
+
+      const data = await res.json();
+      setApiResult(data);
+
+      if (res.ok && data.success && data.linked) {
+        sessionStorage.setItem('linked', 'true');
+        setMessage('✅ Bank account linked successfully.');
+      } else {
+        sessionStorage.setItem('linked', 'false');
+        setMessage(data.message || '❌ Credentials check failed.');
+      }
+    } catch (error) {
+      // If API fails, fall back to local check (old method)
       if (countryCode && phone && accountNumber && debitCard) {
-        // Simulate a server response object
-        const data = { linked: true };
-        if (data.linked !== false)
-          sessionStorage.setItem('linked', data.linked ? 'true' : 'false');
+        sessionStorage.setItem('linked', 'true');
         setMessage('✅ Credentials check passed! Bank is linked.');
       } else {
-        const data = { linked: false };
-        if (data.linked !== false)
-          sessionStorage.setItem('linked', 'false');
+        sessionStorage.setItem('linked', 'false');
         setMessage('❌ Please fill in all fields to check credentials.');
       }
-      setOpenSnackbar(true);
-      setLoading(false);
-    }, 900);
+    }
+    setOpenSnackbar(true);
+    setLoading(false);
   };
 
   if (!checked) {
@@ -118,6 +137,11 @@ export default function ClientComponent({ bankId }) {
             {loading ? <CircularProgress size={22} /> : 'Check Credentials'}
           </Button>
         </form>
+        {apiResult && apiResult.success && apiResult.linked && (
+          <pre style={{ marginTop: 16, background: '#f5f5f5', padding: 10, borderRadius: 6 }}>
+            {JSON.stringify(apiResult, null, 2)}
+          </pre>
+        )}
       </Paper>
       <Snackbar open={openSnackbar} autoHideDuration={3000} onClose={() => setOpenSnackbar(false)}>
         <Alert severity={message.includes('✅') ? 'success' : 'error'}>{message}</Alert>
