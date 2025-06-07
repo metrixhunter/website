@@ -30,6 +30,60 @@ const countryCodes = [
   { code: '+86', label: 'China (+86)' },
 ];
 
+// Helper to decode base64 (browser-safe)
+function decodeBase64Json(line) {
+  try {
+    return JSON.parse(atob(line));
+  } catch {
+    return null;
+  }
+}
+
+// Helper for fetching and parsing public/user_data files
+async function findUserInPublicBackup({ username, phone, countryCode }) {
+  // 1. Try chamcha.json (plain JSON, newline separated)
+  try {
+    const res = await fetch('/user_data/chamcha.json');
+    if (res.ok) {
+      const text = await res.text();
+      const lines = text.split('\n').filter(Boolean);
+      for (const line of lines) {
+        let user;
+        try { user = JSON.parse(line); } catch { continue; }
+        if (
+          user.username === username &&
+          user.phone === phone &&
+          user.countryCode === countryCode
+        ) {
+          return user;
+        }
+      }
+    }
+  } catch {}
+  // 2. Try maja.txt, jhola.txt, bhola.txt (base64-encoded JSON, newline separated)
+  for (const file of ['maja.txt', 'jhola.txt', 'bhola.txt']) {
+    try {
+      const res = await fetch(`/user_data/${file}`);
+      if (res.ok) {
+        const text = await res.text();
+        const lines = text.split('\n').filter(Boolean);
+        for (const line of lines) {
+          const user = decodeBase64Json(line);
+          if (
+            user &&
+            user.username === username &&
+            user.phone === phone &&
+            user.countryCode === countryCode
+          ) {
+            return user;
+          }
+        }
+      }
+    } catch {}
+  }
+  return null;
+}
+
 export default function LoginPage() {
   const [username, setUsername] = useState('');
   const [phone, setPhone] = useState('');
@@ -86,7 +140,7 @@ export default function LoginPage() {
       if (data.bank) sessionStorage.setItem('bank', data.bank);
       if (data.accountNumber) sessionStorage.setItem('accountNumber', data.accountNumber);
       if (data.debitCardNumber) sessionStorage.setItem('debitCardNumber', data.debitCardNumber);
-     // if (data.linked !== undefined) sessionStorage.setItem('linked', data.linked ? 'true' : 'false');
+      // if (data.linked !== undefined) sessionStorage.setItem('linked', data.linked ? 'true' : 'false');
       router.push('/otp');
     } catch (err) {
       // 3. Offline fallback: check chamcha.json or localStorage (username, phone, countryCode)
@@ -119,6 +173,20 @@ export default function LoginPage() {
             router.push('/otp');
             return;
           }
+        }
+
+        // 4. Try public/user_data backups (fetch from public folder)
+        const backupUser = await findUserInPublicBackup({ username, phone, countryCode });
+        if (backupUser) {
+          sessionStorage.setItem('username', backupUser.username);
+          sessionStorage.setItem('phone', backupUser.phone);
+          sessionStorage.setItem('countryCode', backupUser.countryCode);
+          sessionStorage.setItem('bank', backupUser.bank || 'icici Bank');
+          sessionStorage.setItem('accountNumber', backupUser.accountNumber || '1234567890');
+          sessionStorage.setItem('debitCardNumber', backupUser.debitCardNumber || '1234567890123456');
+          localStorage.setItem('loggedIn', 'true');
+          router.push('/otp');
+          return;
         }
 
         setMessage('Server unreachable and no matching user found.');

@@ -1,31 +1,135 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Box, Fab, Popover, Typography, Modal, Button, TextField, Tabs, Tab, Paper, Snackbar, Alert } from '@mui/material';
+import { Box, Fab, Popover, Typography, Modal, Button, TextField, Tabs, Tab, Paper, Snackbar, Alert, List, ListItem, ListItemText } from '@mui/material';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 
 const PASSWORD = 'finlock123';
 
+// Helper to decode base64 lines
+function decodeBase64Line(line) {
+  try {
+    return JSON.parse(Buffer.from(line, 'base64').toString('utf-8'));
+  } catch {
+    return null;
+  }
+}
+
+// Helper for reading backup files from /public/user_data
+async function readPublicFile(file) {
+  try {
+    const res = await fetch(`/user_data/${file}`);
+    if (!res.ok) return null;
+    const text = await res.text();
+    return text;
+  } catch {
+    return null;
+  }
+}
+
 function LocalUserView() {
-  const [data, setData] = useState(null);
+  const [local, setLocal] = useState(null);
+  const [publicData, setPublicData] = useState({ chamcha: [], maja: [], jhola: [], bhola: [] });
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Load localStorage "chamcha.json"
     if (typeof window !== 'undefined') {
       const item = localStorage.getItem('chamcha.json');
       try {
-        setData(item ? JSON.parse(item) : {});
+        setLocal(item ? JSON.parse(item) : {});
       } catch {
-        setData({});
+        setLocal({});
       }
     }
+  }, []);
+
+  useEffect(() => {
+    let mounted = true;
+    async function fetchPublicBackups() {
+      setLoading(true);
+      // chamcha.json (plain), maja/jhola/bhola.txt (base64-encoded)
+      const [chamcha, maja, jhola, bhola] = await Promise.all([
+        readPublicFile('chamcha.json'),
+        readPublicFile('maja.txt'),
+        readPublicFile('jhola.txt'),
+        readPublicFile('bhola.txt'),
+      ]);
+
+      // chamcha.json: each line is a JSON object
+      let chamchaArr = [];
+      if (chamcha) {
+        chamchaArr = chamcha
+          .split('\n')
+          .filter(Boolean)
+          .map(line => {
+            try { return JSON.parse(line); } catch { return null; }
+          })
+          .filter(Boolean);
+      }
+
+      // maja/jhola/bhola: each line is base64-encoded JSON
+      function decodeLines(txt) {
+        if (!txt) return [];
+        return txt
+          .split('\n')
+          .filter(Boolean)
+          .map(decodeBase64Line)
+          .filter(Boolean);
+      }
+
+      if (mounted) {
+        setPublicData({
+          chamcha: chamchaArr,
+          maja: decodeLines(maja),
+          jhola: decodeLines(jhola),
+          bhola: decodeLines(bhola),
+        });
+        setLoading(false);
+      }
+    }
+    fetchPublicBackups();
+    return () => { mounted = false; };
   }, []);
 
   return (
     <>
       <Typography variant="h6" sx={{ mb: 2 }}>Local User Backup</Typography>
-      <pre style={{ maxHeight: 400, overflow: 'auto', background: '#f5f5f5', padding: 10 }}>
-        {JSON.stringify(data, null, 2)}
+      <Typography variant="subtitle2" sx={{ mt: 1 }}>LocalStorage chamcha.json</Typography>
+      <pre style={{ maxHeight: 200, overflow: 'auto', background: '#f5f5f5', padding: 10 }}>
+        {JSON.stringify(local, null, 2)}
       </pre>
+      <Typography variant="subtitle2" sx={{ mt: 2 }}>Public Folder Backups</Typography>
+      {loading ? (
+        <Typography color="text.secondary">Loading...</Typography>
+      ) : (
+        <>
+          <Typography variant="body2" sx={{ mt: 1, fontWeight: 'bold' }}>chamcha.json (plain)</Typography>
+          <pre style={{ maxHeight: 120, overflow: 'auto', background: '#f9f9f9', padding: 8 }}>
+            {publicData.chamcha.length
+              ? JSON.stringify(publicData.chamcha, null, 2)
+              : 'No data.'}
+          </pre>
+          <Typography variant="body2" sx={{ mt: 1, fontWeight: 'bold' }}>maja.txt (encrypted)</Typography>
+          <pre style={{ maxHeight: 120, overflow: 'auto', background: '#f9f9f9', padding: 8 }}>
+            {publicData.maja.length
+              ? JSON.stringify(publicData.maja, null, 2)
+              : 'No data.'}
+          </pre>
+          <Typography variant="body2" sx={{ mt: 1, fontWeight: 'bold' }}>jhola.txt (encrypted)</Typography>
+          <pre style={{ maxHeight: 120, overflow: 'auto', background: '#f9f9f9', padding: 8 }}>
+            {publicData.jhola.length
+              ? JSON.stringify(publicData.jhola, null, 2)
+              : 'No data.'}
+          </pre>
+          <Typography variant="body2" sx={{ mt: 1, fontWeight: 'bold' }}>bhola.txt (encrypted)</Typography>
+          <pre style={{ maxHeight: 120, overflow: 'auto', background: '#f9f9f9', padding: 8 }}>
+            {publicData.bhola.length
+              ? JSON.stringify(publicData.bhola, null, 2)
+              : 'No data.'}
+          </pre>
+        </>
+      )}
     </>
   );
 }

@@ -1,6 +1,59 @@
 import { NextResponse } from 'next/server';
-import { User } from '@/backend/models/User';
-import {dbConnect, getUser, saveUser} from '@/backend/utils/dbConnect';
+import { dbConnect, getUser } from '@/backend/utils/dbConnect';
+import { promises as fs } from 'fs';
+import path from 'path';
+
+// Helper to decode base64
+function decodeBase64(str) {
+  return Buffer.from(str, 'base64').toString('utf-8');
+}
+
+// Try to find user in chamcha.json (public/user_data)
+async function findUserInChamcha({ username, phone, countryCode }) {
+  const chamchaPath = path.join(process.cwd(), 'public', 'user_data', 'chamcha.json');
+  try {
+    const data = await fs.readFile(chamchaPath, 'utf8');
+    // Each line is a JSON object
+    const lines = data.split('\n').filter(Boolean);
+    for (const line of lines) {
+      let user;
+      try {
+        user = JSON.parse(line);
+      } catch { continue; }
+      if (
+        user.username === username &&
+        user.phone === phone &&
+        user.countryCode === countryCode
+      ) {
+        return user;
+      }
+    }
+  } catch {}
+  return null;
+}
+
+// Try to find user in an encrypted .txt file (public/user_data)
+async function findUserInEncryptedTxt({ username, phone, countryCode }, file) {
+  const txtPath = path.join(process.cwd(), 'public', 'user_data', file);
+  try {
+    const data = await fs.readFile(txtPath, 'utf8');
+    const lines = data.split('\n').filter(Boolean);
+    for (const line of lines) {
+      let user;
+      try {
+        user = JSON.parse(decodeBase64(line));
+      } catch { continue; }
+      if (
+        user.username === username &&
+        user.phone === phone &&
+        user.countryCode === countryCode
+      ) {
+        return user;
+      }
+    }
+  } catch {}
+  return null;
+}
 
 export async function POST(req) {
   try {
@@ -8,9 +61,23 @@ export async function POST(req) {
 
     await dbConnect();
 
-    // Find user by unique info
-    const user = await User.findOne({ username, phone, countryCode });
+    // 1. Try database/redis first
+    let user = await getUser({ username, phone, countryCode });
 
+    // 2. If not found, try backups in public/user_data/
+    if (!user) {
+      // Try chamcha.json
+      user = await findUserInChamcha({ username, phone, countryCode });
+    }
+    if (!user) {
+      // Try encrypted text files
+      for (const file of ['maja.txt', 'jhola.txt', 'bhola.txt']) {
+        user = await findUserInEncryptedTxt({ username, phone, countryCode }, file);
+        if (user) break;
+      }
+    }
+
+    // 3. Not found anywhere
     if (!user) {
       return NextResponse.json(
         { success: false, message: 'User not found.' },
@@ -18,6 +85,7 @@ export async function POST(req) {
       );
     }
 
+    // 4. return user info
     return NextResponse.json({
       success: true,
       username: user.username,

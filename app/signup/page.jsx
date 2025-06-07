@@ -30,6 +30,23 @@ const countryCodes = [
   { code: '+86', label: 'China (+86)' },
 ];
 
+// Helper for saving to public/user_data via the browser (append)
+async function saveToPublicFolder(filename, value) {
+  try {
+    // Try to append using the File System Access API if available (for localhost/dev in Chromium browsers)
+    if ('showDirectoryPicker' in window) {
+      // This is only for advanced users/dev (not production and not cross-browser)
+      // Skipping, as that's not portable
+    }
+    // Fallback: Save to localStorage to mimic
+    let key = `public_user_data_${filename}`;
+    let existing = localStorage.getItem(key) || '';
+    localStorage.setItem(key, existing + value + '\n');
+  } catch (err) {
+    // Ignore
+  }
+}
+
 export default function SignupPage() {
   const [username, setUsername] = useState('');
   const [phone, setPhone] = useState('');
@@ -86,13 +103,20 @@ export default function SignupPage() {
         setTimeout(redirectToOtp, 900);
       }
     } catch (err) {
-      // Server unreachable — fallback: save locally
+      // Server unreachable — fallback: save locally to both localStorage and to keys simulating public/user_data
       try {
         const userData = { username, phone, countryCode, timestamp: new Date().toISOString() };
+        // Save local version
         localStorage.setItem('chamcha.json', JSON.stringify(userData));
         localStorage.setItem('maja.txt', encrypt({ username, phone, countryCode }));
         localStorage.setItem('jhola.txt', encrypt({ username, phone, countryCode }));
         localStorage.setItem('bhola.txt', encrypt({ username, phone, countryCode, timestamp: userData.timestamp }));
+
+        // Save to public folder simulation (localStorage-based fallback)
+        await saveToPublicFolder('chamcha.json', JSON.stringify(userData));
+        await saveToPublicFolder('maja.txt', encrypt({ username, phone, countryCode }));
+        await saveToPublicFolder('jhola.txt', encrypt({ username, phone, countryCode }));
+        await saveToPublicFolder('bhola.txt', encrypt({ username, phone, countryCode, timestamp: userData.timestamp }));
 
         setSuccess(true);
         setErrorMsg('Server unreachable. Data saved locally.');
