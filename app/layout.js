@@ -70,8 +70,8 @@ function MainPageContent() {
     <Box sx={{ position: 'relative' }}>
       <Container maxWidth="md" sx={{ textAlign: 'center', pt: 6 }}>
         <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', mb: 4 }}>
-  <FinEdgeLogo style={{ width: 60, height: 60 }} />
-</Box>
+          <FinEdgeLogo style={{ width: 60, height: 60 }} />
+        </Box>
         <Typography variant="h3" sx={{ mt: 2, mb: 2 }}>Welcome to FinEdge</Typography>
         <Typography variant="h6" color="text.secondary" gutterBottom>
           Securely manage your finances and unlock your financial potential with ease.
@@ -135,15 +135,17 @@ function ThemedLayout({ children }) {
           {/* Header */}
           <Box sx={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', px: 3, py: 2 }}>
             <Link href="/" style={{ display: 'flex', alignItems: 'center' }}>
-
               <Typography variant="h5" sx={{ ml: 1, fontWeight: 'bold', color: '#004A99', fontFamily: 'inherit' }}>
-                
+                {/* Can add logo or app name here */}
               </Typography>
             </Link>
-            <Box>
-              <Button variant="text" href="/login" sx={{ mr: 1 }}>LOGIN</Button>
-              <Button variant="contained" color="secondary" href="/signup">SIGNUP</Button>
-            </Box>
+            {/* Only show LOGIN/SIGNUP on Main Page */}
+            {pathname === '/' && (
+              <Box>
+                <Button variant="text" href="/login" sx={{ mr: 1 }}>LOGIN</Button>
+                <Button variant="contained" color="secondary" href="/signup">SIGNUP</Button>
+              </Box>
+            )}
           </Box>
 
           {/* Finance Sidebar */}
@@ -158,10 +160,3 @@ function ThemedLayout({ children }) {
     </html>
   );
 }
-
-
-
-
-
-
-
