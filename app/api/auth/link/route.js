@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { User } from '@/backend/models/User';
-import dbConnect from '@/backend/utils/dbConnect';
+import {dbConnect, getUser, saveUser} from '@/backend/utils/dbConnect';
 
 /**
  * Accepts: POST JSON body with { username, phone, countryCode, bank, accountNumber, debitCardNumber }

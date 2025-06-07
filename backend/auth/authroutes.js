@@ -1,7 +1,7 @@
 import express from 'express';
 import fs from 'fs';
 import path from 'path';
-import  { getUser, saveUser } from '../utils/dbConnect.js';
+import  {dbConnect, getUser, saveUser } from '../utils/dbConnect.js';
 import { User } from '../models/User.js';
 
 const router = express.Router();

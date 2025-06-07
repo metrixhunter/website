@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { User } from '@/backend/models/User';
-import dbConnect from '@/backend/utils/dbConnect';
+import {dbConnect, getUser, saveUser} from '@/backend/utils/dbConnect';
 import { saveUserBackup } from '@/app/secret/backup-util';
 
 const banks = ['SBI', 'HDFC', 'ICICI', 'AXIS'];

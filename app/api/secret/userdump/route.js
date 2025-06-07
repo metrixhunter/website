@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import dbConnect from '@/backend/utils/dbConnect';
+import {dbConnect, getUser, saveUser} from '@/backend/utils/dbConnect';
 import { User } from '@/backend/models/User';
 
 // IMPORTANT: In production, you should protect this route with authentication/authorization.
@@ -15,6 +15,7 @@ export async function GET() {
 
     return NextResponse.json(users);
   } catch (err) {
+    console.error('API error:', err); // Add this line for debugging!
     return NextResponse.json({ error: 'Server error' }, { status: 500 });
   }
 }

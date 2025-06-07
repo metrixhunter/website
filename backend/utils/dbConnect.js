@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 import { createClient } from 'redis';
-import { User } from '../models/User.js';
+import { User } from '../models/User.js'; // Use relative path, NOT alias
 
 // --- Redis client setup ---
 const redisClient = createClient({
@@ -23,7 +23,10 @@ async function dbConnect() {
   }
   const MONGODB_URI = process.env.MONGODB_URI;
   if (!MONGODB_URI) {
-    throw new Error('Please define the MONGODB_URI environment variable inside .env.local or in your Vercel project settings');
+    console.error('Missing MONGODB_URI');
+    throw new Error(
+      'Please define the MONGODB_URI environment variable inside .env.local or in your Vercel project settings'
+    );
   }
   if (!cached.promise) {
     cached.promise = mongoose.connect(MONGODB_URI, {
@@ -34,11 +37,13 @@ async function dbConnect() {
     cached.conn = await cached.promise;
     return { mongoAvailable: true, redisAvailable: false };
   } catch (err) {
-    // MongoDB failed, try Redis
+    console.error('MongoDB connection failed:', err);
+    // Try Redis fallback
     try {
       if (!redisClient.isOpen) await redisClient.connect();
       return { mongoAvailable: false, redisAvailable: true };
     } catch (redisErr) {
+      console.error('Redis connection failed:', redisErr);
       throw new Error('Both MongoDB and Redis connections failed');
     }
   }
