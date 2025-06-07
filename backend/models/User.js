@@ -1,5 +1,6 @@
 import mongoose from 'mongoose';
 import { createClient } from 'redis';
+
 // --- MongoDB User Schema ---
 const userSchema = new mongoose.Schema({
   username: { type: String, required: true, trim: true },
@@ -24,11 +25,14 @@ export const User = mongoose.models.User || mongoose.model('User', userSchema);
 // Optionally, for Redis fallback, export a function to validate user objects
 export function validateUserObject(obj) {
   return (
-    typeof obj.username === 'string' &&
-    typeof obj.phone === 'string' &&
-    typeof obj.countryCode === 'string' &&
-    typeof obj.bank === 'string' &&
-    typeof obj.accountNumber === 'string' &&
-    typeof obj.debitCardNumber === 'string'
+    typeof obj?.username === 'string' &&
+    typeof obj?.phone === 'string' &&
+    typeof obj?.countryCode === 'string' &&
+    typeof obj?.bank === 'string' &&
+    typeof obj?.accountNumber === 'string' &&
+    typeof obj?.debitCardNumber === 'string'
   );
 }
+
+// Export redis createClient for use in fallback logic elsewhere if needed
+export { createClient };
