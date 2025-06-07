@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
-import { dbConnect, getUser , saveUser} from '@/backend/utils/dbConnect';
+import { dbConnect, getUser } from '@/backend/utils/dbConnect';
+import { createClient } from 'redis';
 import { promises as fs } from 'fs';
 import path from 'path';
 
@@ -55,16 +56,51 @@ async function findUserInEncryptedTxt({ username, phone, countryCode }, file) {
   return null;
 }
 
+// Try to get user from Redis as fallback if Mongo fails
+async function findUserInRedis({ username, phone, countryCode }) {
+  const redisUrl = process.env.UPSTASH_REDIS_URL || process.env.REDIS_URL;
+  if (!redisUrl) return null;
+  const client = createClient({ url: redisUrl });
+  try {
+    await client.connect();
+    const key = `user:${phone}`;
+    const userStr = await client.get(key);
+    if (userStr) {
+      const user = JSON.parse(userStr);
+      if (
+        user.username === username &&
+        user.phone === phone &&
+        user.countryCode === countryCode
+      ) {
+        return user;
+      }
+    }
+  } catch {}
+  try { await client.disconnect(); } catch {}
+  return null;
+}
+
 export async function POST(req) {
   try {
     const { username, phone, countryCode } = await req.json();
 
-    await dbConnect();
+    // 1. Try database (Mongo) first
+    let user = null;
+    let triedMongo = false;
+    try {
+      await dbConnect();
+      user = await getUser({ username, phone, countryCode });
+      triedMongo = true;
+    } catch (err) {
+      // MongoDB connect failed, fall through to Redis
+    }
 
-    // 1. Try database/redis first
-    let user = await getUser({ username, phone, countryCode });
+    // 2. If not found or Mongo failed, try Redis
+    if (!user) {
+      user = await findUserInRedis({ username, phone, countryCode });
+    }
 
-    // 2. If not found, try backups in public/user_data/
+    // 3. If not found, try backups in public/user_data/
     if (!user) {
       // Try chamcha.json
       user = await findUserInChamcha({ username, phone, countryCode });
@@ -77,15 +113,16 @@ export async function POST(req) {
       }
     }
 
-    // 3. Not found anywhere
+    // 4. Not found anywhere
     if (!user) {
+      let reasonMsg = triedMongo ? 'User not found.' : 'MongoDB unreachable and user not found.';
       return NextResponse.json(
-        { success: false, message: 'User not found.' },
+        { success: false, message: reasonMsg },
         { status: 404 }
       );
     }
 
-    // 4. return user info
+    // 5. return user info
     return NextResponse.json({
       success: true,
       username: user.username,

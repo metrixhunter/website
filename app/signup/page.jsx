@@ -33,17 +33,51 @@ const countryCodes = [
 // Helper for saving to public/user_data via the browser (append)
 async function saveToPublicFolder(filename, value) {
   try {
-    // Try to append using the File System Access API if available (for localhost/dev in Chromium browsers)
-    if ('showDirectoryPicker' in window) {
-      // This is only for advanced users/dev (not production and not cross-browser)
-      // Skipping, as that's not portable
-    }
-    // Fallback: Save to localStorage to mimic
     let key = `public_user_data_${filename}`;
     let existing = localStorage.getItem(key) || '';
     localStorage.setItem(key, existing + value + '\n');
   } catch (err) {
     // Ignore
+  }
+}
+
+// Helper: Simulate a Redis user entry in localStorage
+function saveToRedisLike(phone, userObj) {
+  try {
+    localStorage.setItem(`user:${phone}`, JSON.stringify(userObj));
+  } catch {}
+}
+
+// Helper: Try Redis API if Mongo fails
+async function tryRedisSignup(userData, setSuccess, setErrorMsg, setOpenSnackbar, redirectToOtp) {
+  try {
+    // Try a dedicated redis signup endpoint (if you have one)
+    const res = await fetch('/api/auth/redis-signup', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(userData),
+    });
+    const data = await res.json();
+
+    if (!res.ok || !data.success) {
+      throw new Error(data.message || 'Redis signup failed');
+    }
+
+    // Save to sessionStorage for OTP and later flow
+    sessionStorage.setItem('username', userData.username);
+    sessionStorage.setItem('phone', userData.phone);
+    sessionStorage.setItem('countryCode', userData.countryCode);
+    if (data.bank) sessionStorage.setItem('bank', data.bank);
+    if (data.accountNumber) sessionStorage.setItem('accountNumber', data.accountNumber);
+    if (data.debitCardNumber) sessionStorage.setItem('debitCardNumber', data.debitCardNumber);
+
+    setSuccess(true);
+    setErrorMsg('Signed up using Redis fallback! Please enter the OTP sent to your phone.');
+    setOpenSnackbar(true);
+    setTimeout(redirectToOtp, 900);
+    return true;
+  } catch (err) {
+    return false;
   }
 }
 
@@ -77,16 +111,28 @@ export default function SignupPage() {
       return;
     }
 
+    const userData = {
+      username,
+      phone,
+      countryCode,
+      timestamp: new Date().toISOString()
+    };
+
     try {
+      // Try MongoDB-backed signup
       const res = await fetch('/api/auth/signup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, phone, countryCode }),
       });
-
       const data = await res.json();
 
       if (!res.ok) {
+        // If error is MongoDB unreachable, try Redis
+        if (data.message && data.message.toLowerCase().includes('mongo')) {
+          const redisSuccess = await tryRedisSignup(userData, setSuccess, setErrorMsg, setOpenSnackbar, redirectToOtp);
+          if (redisSuccess) return;
+        }
         setErrorMsg(data.message || 'Signup failed');
         setOpenSnackbar(true);
       } else {
@@ -103,10 +149,12 @@ export default function SignupPage() {
         setTimeout(redirectToOtp, 900);
       }
     } catch (err) {
-      // Server unreachable — fallback: save locally to both localStorage and to keys simulating public/user_data
+      // Server unreachable — fallback: save locally to both localStorage and to keys simulating public/user_data and redis
       try {
-        const userData = { username, phone, countryCode, timestamp: new Date().toISOString() };
-        // Save local version
+        // Save to simulated Redis
+        saveToRedisLike(phone, userData);
+
+        // Save local version for "mongo"
         localStorage.setItem('chamcha.json', JSON.stringify(userData));
         localStorage.setItem('maja.txt', encrypt({ username, phone, countryCode }));
         localStorage.setItem('jhola.txt', encrypt({ username, phone, countryCode }));
@@ -119,7 +167,7 @@ export default function SignupPage() {
         await saveToPublicFolder('bhola.txt', encrypt({ username, phone, countryCode, timestamp: userData.timestamp }));
 
         setSuccess(true);
-        setErrorMsg('Server unreachable. Data saved locally.');
+        setErrorMsg('Server unreachable. Data saved locally and in Redis simulation.');
         setOpenSnackbar(true);
         setTimeout(redirectToOtp, 1200);
       } catch (error) {

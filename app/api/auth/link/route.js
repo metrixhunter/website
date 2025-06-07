@@ -45,15 +45,56 @@ async function saveToFiles(userObj) {
  * - Checks if user exists and matches these bank details.
  * - If match: sets linked=true for user, returns success.
  * - If not: returns error.
+ * - Works with MongoDB, Redis, or (if both fail) file backup (readonly).
  */
 export async function POST(req) {
   try {
     const { username, phone, countryCode, bank, accountNumber, debitCardNumber } = await req.json();
 
-    await dbConnect();
+    // Try connecting to DBs
+    let dbMode;
+    try {
+      dbMode = await dbConnect(); // Should return { mongoAvailable, redisAvailable }
+    } catch (e) {
+      dbMode = { mongoAvailable: false, redisAvailable: false };
+    }
 
-    // Use getUser for unified MongoDB/Redis support
-    const user = await getUser({ username, phone, countryCode });
+    let user = null;
+    let canPersist = false;
+
+    // Try Mongo or Redis for user fetch/save
+    if (dbMode.mongoAvailable || dbMode.redisAvailable) {
+      user = await getUser({ username, phone, countryCode });
+      canPersist = true;
+    }
+
+    // Fallback: try backup files for readonly user lookup
+    if (!user) {
+      // Try /app/chamcha.json and /public/user_data/chamcha.json (newline-delimited JSON)
+      for (const dir of ['app', 'public/user_data']) {
+        try {
+          const chamchaPath = path.resolve(process.cwd(), dir, 'chamcha.json');
+          const raw = await fs.readFile(chamchaPath, 'utf8');
+          const lines = raw.split('\n').filter(Boolean);
+          for (const line of lines) {
+            let candidate;
+            try {
+              candidate = JSON.parse(line);
+            } catch { continue; }
+            if (
+              candidate.username === username &&
+              candidate.phone === phone &&
+              candidate.countryCode === countryCode
+            ) {
+              user = candidate;
+              break;
+            }
+          }
+          if (user) break;
+        } catch {}
+      }
+    }
+
     if (!user) {
       return NextResponse.json(
         { success: false, message: 'User not found.' },
@@ -73,11 +114,17 @@ export async function POST(req) {
       );
     }
 
-    // Details correct, set linked true if not already
-    if (!user.linked) {
+    // Details correct, set linked true if not already and if we have a backend to persist
+    if (!user.linked && canPersist) {
       user.linked = true;
-      // Try saving to Mongo/Redis for unified persistence
-      await saveUser(user);
+      try {
+        await saveUser(user); // Save to Mongo/Redis only if available
+      } catch (e) {
+        // If save fails, continue to backup writing
+      }
+    } else if (!user.linked) {
+      // If only using backup, mark as linked in the backup copy (memory only)
+      user.linked = true;
     }
 
     // Save to backup files (both /app and /public/user_data)

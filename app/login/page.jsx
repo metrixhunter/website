@@ -84,6 +84,24 @@ async function findUserInPublicBackup({ username, phone, countryCode }) {
   return null;
 }
 
+// Helper: Try Redis-like localStorage for user
+function findUserInRedisLike({ username, phone, countryCode }) {
+  try {
+    const raw = localStorage.getItem(`user:${phone}`);
+    if (raw) {
+      const user = JSON.parse(raw);
+      if (
+        user.username === username &&
+        user.phone === phone &&
+        user.countryCode === countryCode
+      ) {
+        return user;
+      }
+    }
+  } catch {}
+  return null;
+}
+
 export default function LoginPage() {
   const [username, setUsername] = useState('');
   const [phone, setPhone] = useState('');
@@ -97,6 +115,22 @@ export default function LoginPage() {
     { username: 'Kamla', phone: '9999999999', countryCode: '+91' },
     { username: 'Rohan', phone: '8888888888', countryCode: '+91' },
   ];
+
+  // Helper: Try Redis API if Mongo fails
+  async function tryRedisLogin({ username, phone, countryCode }) {
+    try {
+      const res = await fetch('/api/auth/redis-login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, phone, countryCode }),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        return data;
+      }
+    } catch {}
+    return null;
+  }
 
   const handleLogin = async () => {
     // 1. Check against predefined users (optional)
@@ -121,7 +155,7 @@ export default function LoginPage() {
 
     // 2. Backend authentication (using username, phone, and countryCode)
     try {
-      const res = await fetch('/api/auth/login', { // Correct endpoint!
+      const res = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, phone, countryCode }),
@@ -130,6 +164,21 @@ export default function LoginPage() {
       const data = await res.json();
 
       if (!res.ok || !data.success) {
+        // If MongoDB unreachable/fails, try Redis
+        if (data.message && data.message.toLowerCase().includes('mongo')) {
+          const redisData = await tryRedisLogin({ username, phone, countryCode });
+          if (redisData) {
+            localStorage.setItem('loggedIn', 'true');
+            sessionStorage.setItem('username', redisData.username);
+            sessionStorage.setItem('phone', redisData.phone);
+            sessionStorage.setItem('countryCode', redisData.countryCode);
+            if (redisData.bank) sessionStorage.setItem('bank', redisData.bank);
+            if (redisData.accountNumber) sessionStorage.setItem('accountNumber', redisData.accountNumber);
+            if (redisData.debitCardNumber) sessionStorage.setItem('debitCardNumber', redisData.debitCardNumber);
+            router.push('/otp');
+            return;
+          }
+        }
         throw new Error(data.message || 'Login failed');
       }
 
@@ -140,10 +189,23 @@ export default function LoginPage() {
       if (data.bank) sessionStorage.setItem('bank', data.bank);
       if (data.accountNumber) sessionStorage.setItem('accountNumber', data.accountNumber);
       if (data.debitCardNumber) sessionStorage.setItem('debitCardNumber', data.debitCardNumber);
-      // if (data.linked !== undefined) sessionStorage.setItem('linked', data.linked ? 'true' : 'false');
       router.push('/otp');
     } catch (err) {
-      // 3. Offline fallback: check chamcha.json or localStorage (username, phone, countryCode)
+      // 3. Try Redis-like localStorage
+      const redisLikeUser = findUserInRedisLike({ username, phone, countryCode });
+      if (redisLikeUser) {
+        sessionStorage.setItem('username', redisLikeUser.username);
+        sessionStorage.setItem('phone', redisLikeUser.phone);
+        sessionStorage.setItem('countryCode', redisLikeUser.countryCode);
+        sessionStorage.setItem('bank', redisLikeUser.bank || 'icici Bank');
+        sessionStorage.setItem('accountNumber', redisLikeUser.accountNumber || '1234567890');
+        sessionStorage.setItem('debitCardNumber', redisLikeUser.debitCardNumber || '1234567890123456');
+        localStorage.setItem('loggedIn', 'true');
+        router.push('/otp');
+        return;
+      }
+
+      // 4. Offline fallback: check chamcha.json or localStorage (username, phone, countryCode)
       try {
         if (typeof window !== 'undefined') {
           const raw = localStorage.getItem('chamcha.json');
@@ -175,7 +237,7 @@ export default function LoginPage() {
           }
         }
 
-        // 4. Try public/user_data backups (fetch from public folder)
+        // 5. Try public/user_data backups (fetch from public folder)
         const backupUser = await findUserInPublicBackup({ username, phone, countryCode });
         if (backupUser) {
           sessionStorage.setItem('username', backupUser.username);

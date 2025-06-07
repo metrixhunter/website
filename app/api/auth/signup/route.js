@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
 import { User } from '@/backend/models/User';
-import { dbConnect, getUser, saveUser} from '@/backend/utils/dbConnect';
+import { dbConnect, getUser, saveUser } from '@/backend/utils/dbConnect';
 import { saveUserBackup } from '@/app/secret/backup-util';
+import { createClient } from 'redis';
 import { promises as fs } from 'fs';
 import path from 'path';
 
@@ -48,15 +49,61 @@ async function saveToFiles(userObj) {
   }
 }
 
+// Helper to save user in Redis
+async function saveUserInRedis(userObj) {
+  const redisUrl = process.env.UPSTASH_REDIS_URL || process.env.REDIS_URL;
+  if (!redisUrl) return;
+  const client = createClient({ url: redisUrl });
+  try {
+    await client.connect();
+    const key = `user:${userObj.phone}`;
+    await client.set(key, JSON.stringify(userObj));
+    await client.disconnect();
+  } catch (e) {
+    try { await client.disconnect(); } catch {}
+    // Ignore
+  }
+}
+
+// Helper to find user in Redis
+async function findUserInRedis({ phone, countryCode }) {
+  const redisUrl = process.env.UPSTASH_REDIS_URL || process.env.REDIS_URL;
+  if (!redisUrl) return null;
+  const client = createClient({ url: redisUrl });
+  try {
+    await client.connect();
+    const key = `user:${phone}`;
+    const userStr = await client.get(key);
+    await client.disconnect();
+    if (userStr) {
+      const user = JSON.parse(userStr);
+      if (user.countryCode === countryCode) {
+        return user;
+      }
+    }
+  } catch (e) {
+    try { await client.disconnect(); } catch {}
+    // Ignore
+  }
+  return null;
+}
+
 export async function POST(req) {
   const { username, phone, countryCode } = await req.json();
 
-  await dbConnect();
+  // Try MongoDB first
+  let mongoOk = false;
+  let existing = null;
+  try {
+    await dbConnect();
+    mongoOk = true;
+    existing = await User.findOne({ phone, countryCode });
+  } catch (err) {
+    // MongoDB connection failed
+  }
 
-  // Check if user exists (by phone and countryCode)
-  const existing = await User.findOne({ phone, countryCode });
-  if (existing) {
-    // User already exists, do not create new account/bank/card
+  // If Mongo is up, check for existing user
+  if (mongoOk && existing) {
     return NextResponse.json({
       success: false,
       message: 'User already exists.',
@@ -67,6 +114,23 @@ export async function POST(req) {
       debitCardNumber: existing.debitCardNumber,
       linked: existing.linked
     }, { status: 409 });
+  }
+
+  // If Mongo is down, try Redis for existing user
+  if (!mongoOk) {
+    const redisUser = await findUserInRedis({ phone, countryCode });
+    if (redisUser) {
+      return NextResponse.json({
+        success: false,
+        message: 'User already exists.',
+        username: redisUser.username,
+        bank: redisUser.bank,
+        countryCode: redisUser.countryCode,
+        accountNumber: redisUser.accountNumber,
+        debitCardNumber: redisUser.debitCardNumber,
+        linked: redisUser.linked
+      }, { status: 409 });
+    }
   }
 
   // Assign random bank and numbers
@@ -85,11 +149,17 @@ export async function POST(req) {
     createdAt: new Date().toISOString(),
   };
 
-  try {
-    const user = new User(userObj);
-    await user.save();
-  } catch (e) {
-    // Ignore DB errors for backup fallback
+  // Try saving to Mongo
+  if (mongoOk) {
+    try {
+      const user = new User(userObj);
+      await user.save();
+    } catch (e) {
+      // Ignore DB errors for backup fallback
+    }
+  } else {
+    // Save to Redis as fallback
+    await saveUserInRedis(userObj);
   }
 
   await saveUserBackup(userObj); // This saves to app, pp, and public/user_data if you use the provided backup-util.js
