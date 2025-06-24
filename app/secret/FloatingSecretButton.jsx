@@ -1,8 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Box, Fab, Popover, Typography, Modal, Button, TextField, Tabs, Tab, Paper, Snackbar, Alert, List, ListItem, ListItemText } from '@mui/material';
+import { Box, Fab, Popover, Typography, Modal, Button, TextField, Tabs, Tab, Paper, Snackbar, Alert, IconButton } from '@mui/material';
 import VisibilityIcon from '@mui/icons-material/Visibility';
+import CloseIcon from '@mui/icons-material/Close';
 
 const PASSWORD = 'finlock123';
 
@@ -31,6 +32,11 @@ function LocalUserView() {
   const [local, setLocal] = useState(null);
   const [publicData, setPublicData] = useState({ chamcha: [], maja: [], jhola: [], bhola: [] });
   const [loading, setLoading] = useState(true);
+
+  // Password protection for local view
+  const [password, setPassword] = useState('');
+  const [access, setAccess] = useState(false);
+  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'error' });
 
   useEffect(() => {
     // Load localStorage "chamcha.json"
@@ -88,9 +94,44 @@ function LocalUserView() {
         setLoading(false);
       }
     }
-    fetchPublicBackups();
+    if (access) {
+      fetchPublicBackups();
+    }
     return () => { mounted = false; };
-  }, []);
+  }, [access]);
+
+  const handleAccess = () => {
+    if (password === PASSWORD) {
+      setAccess(true);
+      setSnackbar({ open: false, message: '', severity: 'success' });
+    } else {
+      setSnackbar({ open: true, message: 'Incorrect password.', severity: 'error' });
+    }
+  };
+
+  if (!access) {
+    return (
+      <>
+        <Typography>Enter password:</Typography>
+        <TextField
+          fullWidth
+          type="password"
+          value={password}
+          onChange={e => setPassword(e.target.value)}
+          sx={{ mb: 1 }}
+          autoComplete="off"
+        />
+        <Button variant="contained" sx={{ mt: 1 }} onClick={handleAccess}>Submit</Button>
+        <Snackbar
+          open={snackbar.open}
+          autoHideDuration={2500}
+          onClose={() => setSnackbar(s => ({ ...s, open: false }))}
+        >
+          <Alert severity={snackbar.severity} sx={{ width: '100%' }}>{snackbar.message}</Alert>
+        </Snackbar>
+      </>
+    );
+  }
 
   return (
     <>
@@ -157,27 +198,31 @@ function ServerUserView() {
     }
   };
 
-  return !access ? (
-    <>
-      <Typography>Enter password:</Typography>
-      <TextField
-        fullWidth
-        type="password"
-        value={password}
-        onChange={e => setPassword(e.target.value)}
-        sx={{ mb: 1 }}
-        autoComplete="off"
-      />
-      <Button variant="contained" sx={{ mt: 1 }} onClick={handleAccess}>Submit</Button>
-      <Snackbar
-        open={snackbar.open}
-        autoHideDuration={2500}
-        onClose={() => setSnackbar(s => ({ ...s, open: false }))}
-      >
-        <Alert severity={snackbar.severity} sx={{ width: '100%' }}>{snackbar.message}</Alert>
-      </Snackbar>
-    </>
-  ) : (
+  if (!access) {
+    return (
+      <>
+        <Typography>Enter password:</Typography>
+        <TextField
+          fullWidth
+          type="password"
+          value={password}
+          onChange={e => setPassword(e.target.value)}
+          sx={{ mb: 1 }}
+          autoComplete="off"
+        />
+        <Button variant="contained" sx={{ mt: 1 }} onClick={handleAccess}>Submit</Button>
+        <Snackbar
+          open={snackbar.open}
+          autoHideDuration={2500}
+          onClose={() => setSnackbar(s => ({ ...s, open: false }))}
+        >
+          <Alert severity={snackbar.severity} sx={{ width: '100%' }}>{snackbar.message}</Alert>
+        </Snackbar>
+      </>
+    );
+  }
+
+  return (
     <>
       <Typography variant="h6" sx={{ mb: 2 }}>Server User Data</Typography>
       <pre style={{ maxHeight: 400, overflow: 'auto', background: '#f5f5f5', padding: 10 }}>
@@ -260,7 +305,21 @@ export default function FloatingSecretButton() {
             bgcolor: 'rgba(0,0,0,0.25)'
           }}
         >
-          <Paper sx={{ borderRadius: 2, p: 2, minWidth: 350, maxWidth: 500 }}>
+          <Paper sx={{ borderRadius: 2, p: 2, minWidth: 350, maxWidth: 500, position: 'relative' }}>
+            <IconButton
+              aria-label="close"
+              onClick={handleModalClose}
+              sx={{
+                position: 'absolute',
+                right: 8,
+                top: 8,
+                color: (theme) => theme.palette.grey[500],
+                zIndex: 1,
+              }}
+              size="large"
+            >
+              <CloseIcon />
+            </IconButton>
             <Tabs value={tab} onChange={handleTabChange} centered sx={{ mb: 2 }}>
               <Tab label="Server" />
               <Tab label="Local" />
