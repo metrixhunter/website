@@ -181,7 +181,8 @@ export default function Layout({ children }) {
         <main style={{ minHeight: "70vh" }}>
           {showHeaderAndMain ? <MainPageContent /> : children}
         </main>
-        <FooterLikeMicrosoft />
+        {/* FOOTER: only on main page */}
+        {showHeaderAndMain && <FooterLikeMicrosoft />}
       </body>
     </html>
   );
