@@ -107,34 +107,46 @@ export default function ClientComponent({ bankId }) {
 
     // Try localStorage chamcha.json as final fallback (for offline/local user)
     function findLocalUser() {
-      if (typeof window !== 'undefined') {
-        const item = localStorage.getItem('chamcha.json');
-        try {
-          const local = item ? JSON.parse(item) : {};
-          if (local.username && local.bank && local.accountNumber) {
-            setLocalUser(local);
-            setUsername(local.username);
-            setPhone(local.phone || '');
-            setCountryCode(local.countryCode || '');
-            setAccountNumber(local.accountNumber || '');
-            setDebitCard(local.debitCardNumber || '');
-            // Find linked bank in list
-            const found = bankList.find(
-              b => b.id === (local.bank || '').toLowerCase()
-            );
-            if (found) {
-              setLinkedBank({
-                ...found,
-                accountNumber: local.accountNumber,
-              });
-            }
-          } else {
-            setMessage('User data not found.');
-          }
-        } catch {
-          setMessage('User data not found.');
-        }
-      }
+     if (typeof window !== 'undefined') {
+  const item = localStorage.getItem('chamcha.json');
+  let offlineUser = null;
+  if (item) {
+    try {
+      offlineUser = JSON.parse(item);
+    } catch {
+      offlineUser = {};
+    }
+  }
+
+  // Check for all user fields, including phone, username, countryCode, accountNumber, debitCardNumber
+  if (
+    offlineUser &&
+    offlineUser.username === username &&
+    offlineUser.phone === phone &&
+    offlineUser.countryCode === countryCode &&
+    offlineUser.accountNumber === accountNumber &&
+    offlineUser.debitCardNumber === debitCard
+  ) {
+    setLocalUser(offlineUser);
+    setUsername(offlineUser.username);
+    setPhone(offlineUser.phone || '');
+    setCountryCode(offlineUser.countryCode || '');
+    setAccountNumber(offlineUser.accountNumber || '');
+    setDebitCard(offlineUser.debitCardNumber || '');
+    // Find linked bank in list
+    const found = bankList.find(
+      b => b.id === (offlineUser.bank || '').toLowerCase()
+    );
+    if (found) {
+      setLinkedBank({
+        ...found,
+        accountNumber: offlineUser.accountNumber,
+      });
+    }
+  } else {
+    setMessage('User data not found.');
+  }
+}
     }
 
     fetchAppBackup();
