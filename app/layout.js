@@ -65,10 +65,17 @@ const footerLinks = [
   }
 ];
 
+const pagesWithFooter = [
+  '/', '/budgeting', '/credit', '/safety', '/saving', '/investment'
+];
+
 export default function Layout({ children }) {
   const pathname = usePathname();
   // Only show header and main page content on "/"
   const showHeaderAndMain = pathname === '/';
+
+  // Should the footer be shown on this page?
+  const showFooter = pagesWithFooter.includes(pathname);
 
   // Popover state only for header on main page
   const [exploreAnchor, setExploreAnchor] = useState(null);
@@ -181,8 +188,8 @@ export default function Layout({ children }) {
         <main style={{ minHeight: "70vh" }}>
           {showHeaderAndMain ? <MainPageContent /> : children}
         </main>
-        {/* FOOTER: only on main page */}
-        {showHeaderAndMain && <FooterLikeMicrosoft />}
+        {/* FOOTER: only on main, budgeting, credit, safety, saving, investment */}
+        {showFooter && <FooterLikeMicrosoft />}
       </body>
     </html>
   );
