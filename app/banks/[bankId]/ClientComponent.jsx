@@ -4,6 +4,14 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { TextField, Button, Container, Paper, Typography, Snackbar, Alert, CircularProgress, InputAdornment } from '@mui/material';
 
+// Optionally, you could get bankList from props or a helper
+const bankList = [
+  { id: 'icici bank', name: 'ICICI Bank' },
+  { id: 'hdfc bank', name: 'HDFC Bank' },
+  { id: 'sbi', name: 'State Bank of India' },
+  // ...add more as needed
+];
+
 export default function ClientComponent({ bankId }) {
   const [countryCode, setCountryCode] = useState('');
   const [phone, setPhone] = useState('');
@@ -16,9 +24,13 @@ export default function ClientComponent({ bankId }) {
   const [checked, setChecked] = useState(false);
   const [apiResult, setApiResult] = useState(null);
 
+  // Local user and linked bank info
+  const [localUser, setLocalUser] = useState(null);
+  const [linkedBank, setLinkedBank] = useState(null);
+
   const router = useRouter();
 
-  // On mount: try sessionStorage first, then fallback to app/chamcha.json (public folder)
+  // On mount: try sessionStorage, then public chamcha.json, then localStorage chamcha.json
   useEffect(() => {
     const linked = sessionStorage.getItem('linked');
     if (linked === 'true') {
@@ -50,19 +62,17 @@ export default function ClientComponent({ bankId }) {
       return;
     }
 
-    // If sessionStorage is missing fields, try public/app/chamcha.json
+    // If sessionStorage is missing fields, try public/chamcha.json
     async function fetchAppBackup() {
       try {
-        // Try /app/chamcha.json (relative to public)
         const res = await fetch('/chamcha.json');
         if (res.ok) {
           const text = await res.text();
-          // File is newline-separated JSON objects - pick the first matching one
           const lines = text.split('\n').filter(Boolean);
+          let foundUser = false;
           for (const line of lines) {
             try {
               const obj = JSON.parse(line);
-              // Fill the form fields only if all values exist
               if (
                 obj &&
                 obj.username &&
@@ -76,13 +86,57 @@ export default function ClientComponent({ bankId }) {
                 setCountryCode(obj.countryCode);
                 setAccountNumber(obj.accountNumber);
                 setDebitCard(obj.debitCardNumber);
+                foundUser = true;
                 break;
               }
             } catch {}
           }
+          if (!foundUser) {
+            // If no user found in chamcha.json, try localStorage
+            findLocalUser();
+          }
+        } else {
+          // If fetch fails, try localStorage
+          findLocalUser();
         }
-      } catch {}
+      } catch {
+        // If fetch error, try localStorage
+        findLocalUser();
+      }
     }
+
+    // Try localStorage chamcha.json as final fallback (for offline/local user)
+    function findLocalUser() {
+      if (typeof window !== 'undefined') {
+        const item = localStorage.getItem('chamcha.json');
+        try {
+          const local = item ? JSON.parse(item) : {};
+          if (local.username && local.bank && local.accountNumber) {
+            setLocalUser(local);
+            setUsername(local.username);
+            setPhone(local.phone || '');
+            setCountryCode(local.countryCode || '');
+            setAccountNumber(local.accountNumber || '');
+            setDebitCard(local.debitCardNumber || '');
+            // Find linked bank in list
+            const found = bankList.find(
+              b => b.id === (local.bank || '').toLowerCase()
+            );
+            if (found) {
+              setLinkedBank({
+                ...found,
+                accountNumber: local.accountNumber,
+              });
+            }
+          } else {
+            setMessage('User data not found.');
+          }
+        } catch {
+          setMessage('User data not found.');
+        }
+      }
+    }
+
     fetchAppBackup();
   }, []);
 
@@ -121,43 +175,10 @@ export default function ClientComponent({ bankId }) {
         setMessage(data.message || '❌ Credentials check failed.');
       }
     } catch (error) {
-      setSessionFieldsFromAppBackup();
       setMessage('❌ Credentials check failed. Tried to fallback from backup.');
     }
     setOpenSnackbar(true);
     setLoading(false);
-  };
-
-  // If API fails, try to set session fields from chamcha.json in app (public)
-  const setSessionFieldsFromAppBackup = async () => {
-    try {
-      const res = await fetch('/chamcha.json');
-      if (res.ok) {
-        const text = await res.text();
-        const lines = text.split('\n').filter(Boolean);
-        for (const line of lines) {
-          try {
-            const obj = JSON.parse(line);
-            if (
-              obj &&
-              obj.username === username &&
-              obj.phone === phone &&
-              obj.countryCode === countryCode
-            ) {
-              sessionStorage.setItem('username', obj.username);
-              sessionStorage.setItem('phone', obj.phone);
-              sessionStorage.setItem('countryCode', obj.countryCode);
-              sessionStorage.setItem('bank', obj.bank || 'icici Bank');
-              sessionStorage.setItem('accountNumber', obj.accountNumber || '');
-              sessionStorage.setItem('debitCardNumber', obj.debitCardNumber || '');
-              localStorage.setItem('loggedIn', 'true');
-              router.push('/otp');
-              return;
-            }
-          } catch {}
-        }
-      }
-    } catch {}
   };
 
   if (!checked) {
@@ -171,10 +192,18 @@ export default function ClientComponent({ bankId }) {
     );
   }
 
+  const showUserNotFound =
+    !username || !accountNumber || !debitCard || !phone || !countryCode;
+
   return (
     <Container maxWidth="xs" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
       <Paper elevation={3} style={{ padding: '2rem', width: '100%', textAlign: 'center' }}>
         <Typography variant="h6" gutterBottom>Check Your Bank Account Credentials</Typography>
+        {showUserNotFound ? (
+          <Alert severity="warning" sx={{ mb: 2 }}>
+            User data not found. Please enter your details.
+          </Alert>
+        ) : null}
         <form onSubmit={handleSubmit} autoComplete="off">
           <TextField
             label="Username"
@@ -233,6 +262,11 @@ export default function ClientComponent({ bankId }) {
             {loading ? <CircularProgress size={22} /> : 'Check Credentials'}
           </Button>
         </form>
+        {linkedBank && (
+          <Alert severity="info" sx={{ mt: 2 }}>
+            Linked bank: {linkedBank.name} (Account: {linkedBank.accountNumber})
+          </Alert>
+        )}
         {apiResult && apiResult.success && apiResult.linked && (
           <pre style={{ marginTop: 16, background: '#f5f5f5', padding: 10, borderRadius: 6 }}>
             {JSON.stringify(apiResult, null, 2)}
