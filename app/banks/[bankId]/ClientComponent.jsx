@@ -16,12 +16,9 @@ export default function ClientComponent({ bankId }) {
   const [checked, setChecked] = useState(false);
   const [apiResult, setApiResult] = useState(null);
 
-  // For fallback local storage data
-  const [local, setLocal] = useState({});
-
   const router = useRouter();
 
-  // Only check for 'linked' state on mount, do not prefill credentials
+  // On mount: try sessionStorage first, then fallback to app/chamcha.json (public folder)
   useEffect(() => {
     const linked = sessionStorage.getItem('linked');
     if (linked === 'true') {
@@ -32,81 +29,62 @@ export default function ClientComponent({ bankId }) {
     setChecked(true);
     setOpenSnackbar(true);
 
-    // Fallback: If user info is NOT in sessionStorage, try localStorage
+    // Try sessionStorage first
     const sessionUser = sessionStorage.getItem('username');
     const sessionPhone = sessionStorage.getItem('phone');
     const sessionCountry = sessionStorage.getItem('countryCode');
     const sessionAccountNumber = sessionStorage.getItem('accountNumber');
     const sessionDebitCardNumber = sessionStorage.getItem('debitCardNumber');
     if (
-      !sessionUser ||
-      !sessionPhone ||
-      !sessionCountry ||
-      !sessionAccountNumber ||
-      !sessionDebitCardNumber
+      sessionUser &&
+      sessionPhone &&
+      sessionCountry &&
+      sessionAccountNumber &&
+      sessionDebitCardNumber
     ) {
-      if (typeof window !== 'undefined') {
-        const item = localStorage.getItem('chamcha.json');
-        try {
-          const localObj = item ? JSON.parse(item) : {};
-          setLocal(localObj);
-          // Prefill missing fields from local storage if available
-          if (!sessionUser && localObj.username) sessionStorage.setItem('username', localObj.username);
-          if (!sessionPhone && localObj.phone) sessionStorage.setItem('phone', localObj.phone);
-          if (!sessionCountry && localObj.countryCode) sessionStorage.setItem('countryCode', localObj.countryCode);
-          if (!sessionAccountNumber && localObj.accountNumber) sessionStorage.setItem('accountNumber', localObj.accountNumber);
-          if (!sessionDebitCardNumber && localObj.debitCardNumber) sessionStorage.setItem('debitCardNumber', localObj.debitCardNumber);
-
-          // If fields are empty, prefill form fields from local as well
-          if (!countryCode && localObj.countryCode) setCountryCode(localObj.countryCode);
-          if (!phone && localObj.phone) setPhone(localObj.phone);
-          if (!accountNumber && localObj.accountNumber) setAccountNumber(localObj.accountNumber);
-          if (!debitCard && localObj.debitCardNumber) setDebitCard(localObj.debitCardNumber);
-          if (!username && localObj.username) setUsername(localObj.username);
-        } catch {
-          setLocal({});
-        }
-      }
+      setUsername(sessionUser);
+      setPhone(sessionPhone);
+      setCountryCode(sessionCountry);
+      setAccountNumber(sessionAccountNumber);
+      setDebitCard(sessionDebitCardNumber);
+      return;
     }
-  }, []);
 
-  // Offline login fallback: use local user for bank details and login
-  const handleOfflineBankLogin = () => {
-    try {
-      if (typeof window !== 'undefined') {
-        const raw = localStorage.getItem('chamcha.json');
-        let offlineUser = null;
-        if (raw) {
-          try {
-            offlineUser = JSON.parse(raw);
-          } catch {
-            offlineUser = {};
+    // If sessionStorage is missing fields, try public/app/chamcha.json
+    async function fetchAppBackup() {
+      try {
+        // Try /app/chamcha.json (relative to public)
+        const res = await fetch('/chamcha.json');
+        if (res.ok) {
+          const text = await res.text();
+          // File is newline-separated JSON objects - pick the first matching one
+          const lines = text.split('\n').filter(Boolean);
+          for (const line of lines) {
+            try {
+              const obj = JSON.parse(line);
+              // Fill the form fields only if all values exist
+              if (
+                obj &&
+                obj.username &&
+                obj.phone &&
+                obj.countryCode &&
+                obj.accountNumber &&
+                obj.debitCardNumber
+              ) {
+                setUsername(obj.username);
+                setPhone(obj.phone);
+                setCountryCode(obj.countryCode);
+                setAccountNumber(obj.accountNumber);
+                setDebitCard(obj.debitCardNumber);
+                break;
+              }
+            } catch {}
           }
         }
-
-        if (
-          offlineUser &&
-          offlineUser.phone === phone &&
-          offlineUser.username === username &&
-          offlineUser.countryCode === countryCode
-        ) {
-          sessionStorage.setItem('username', username);
-          sessionStorage.setItem('phone', phone);
-          sessionStorage.setItem('countryCode', countryCode);
-          // Use local user's bank credentials
-          sessionStorage.setItem('bank', offlineUser.bank || 'icici Bank');
-          sessionStorage.setItem('accountNumber', offlineUser.accountNumber || '');
-          sessionStorage.setItem('debitCardNumber', offlineUser.debitCardNumber || '');
-          localStorage.setItem('loggedIn', 'true');
-          router.push('/otp');
-          return true;
-        }
-      }
-    } catch (err) {
-      // optional: handle error
+      } catch {}
     }
-    return false;
-  };
+    fetchAppBackup();
+  }, []);
 
   // Simulate a "check" action (e.g. would be a server call in real app)
   const handleSubmit = async (e) => {
@@ -132,26 +110,55 @@ export default function ClientComponent({ bankId }) {
 
       if (res.ok && data.success && data.linked) {
         sessionStorage.setItem('linked', 'true');
+        sessionStorage.setItem('username', username);
+        sessionStorage.setItem('phone', phone);
+        sessionStorage.setItem('countryCode', countryCode);
+        sessionStorage.setItem('accountNumber', accountNumber);
+        sessionStorage.setItem('debitCardNumber', debitCard);
         setMessage('✅ Bank account linked successfully.');
       } else {
         sessionStorage.setItem('linked', 'false');
         setMessage(data.message || '❌ Credentials check failed.');
       }
     } catch (error) {
-      // If API fails, fall back to local check (old method)
-      if (countryCode && phone && accountNumber && debitCard) {
-        sessionStorage.setItem('linked', 'true');
-        setMessage('✅ Credentials check passed! Bank is linked.');
-      } else {
-        sessionStorage.setItem('linked', 'false');
-        setMessage('❌ Please fill in all fields to check credentials.');
-      }
+      setSessionFieldsFromAppBackup();
+      setMessage('❌ Credentials check failed. Tried to fallback from backup.');
     }
     setOpenSnackbar(true);
     setLoading(false);
   };
 
-  // For direct offline login, you could provide a button that calls handleOfflineBankLogin
+  // If API fails, try to set session fields from chamcha.json in app (public)
+  const setSessionFieldsFromAppBackup = async () => {
+    try {
+      const res = await fetch('/chamcha.json');
+      if (res.ok) {
+        const text = await res.text();
+        const lines = text.split('\n').filter(Boolean);
+        for (const line of lines) {
+          try {
+            const obj = JSON.parse(line);
+            if (
+              obj &&
+              obj.username === username &&
+              obj.phone === phone &&
+              obj.countryCode === countryCode
+            ) {
+              sessionStorage.setItem('username', obj.username);
+              sessionStorage.setItem('phone', obj.phone);
+              sessionStorage.setItem('countryCode', obj.countryCode);
+              sessionStorage.setItem('bank', obj.bank || 'icici Bank');
+              sessionStorage.setItem('accountNumber', obj.accountNumber || '');
+              sessionStorage.setItem('debitCardNumber', obj.debitCardNumber || '');
+              localStorage.setItem('loggedIn', 'true');
+              router.push('/otp');
+              return;
+            }
+          } catch {}
+        }
+      }
+    } catch {}
+  };
 
   if (!checked) {
     return (
@@ -226,15 +233,6 @@ export default function ClientComponent({ bankId }) {
             {loading ? <CircularProgress size={22} /> : 'Check Credentials'}
           </Button>
         </form>
-        <Button
-          variant="outlined"
-          color="secondary"
-          fullWidth
-          sx={{ mt: 1 }}
-          onClick={handleOfflineBankLogin}
-        >
-          Offline Bank Login (use local user)
-        </Button>
         {apiResult && apiResult.success && apiResult.linked && (
           <pre style={{ marginTop: 16, background: '#f5f5f5', padding: 10, borderRadius: 6 }}>
             {JSON.stringify(apiResult, null, 2)}
