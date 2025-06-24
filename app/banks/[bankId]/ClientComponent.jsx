@@ -107,46 +107,46 @@ export default function ClientComponent({ bankId }) {
 
     // Try localStorage chamcha.json as final fallback (for offline/local user)
     function findLocalUser() {
-     if (typeof window !== 'undefined') {
-  const item = localStorage.getItem('chamcha.json');
-  let offlineUser = null;
-  if (item) {
-    try {
-      offlineUser = JSON.parse(item);
-    } catch {
-      offlineUser = {};
-    }
-  }
+      if (typeof window !== 'undefined') {
+        const item = localStorage.getItem('chamcha.json');
+        let offlineUser = null;
+        if (item) {
+          try {
+            offlineUser = JSON.parse(item);
+          } catch {
+            offlineUser = {};
+          }
+        }
 
-  // Check for all user fields, including phone, username, countryCode, accountNumber, debitCardNumber
-  if (
-    offlineUser &&
-    offlineUser.username === username &&
-    offlineUser.phone === phone &&
-    offlineUser.countryCode === countryCode &&
-    offlineUser.accountNumber === accountNumber &&
-    offlineUser.debitCardNumber === debitCard
-  ) {
-    setLocalUser(offlineUser);
-    setUsername(offlineUser.username);
-    setPhone(offlineUser.phone || '');
-    setCountryCode(offlineUser.countryCode || '');
-    setAccountNumber(offlineUser.accountNumber || '');
-    setDebitCard(offlineUser.debitCardNumber || '');
-    // Find linked bank in list
-    const found = bankList.find(
-      b => b.id === (offlineUser.bank || '').toLowerCase()
-    );
-    if (found) {
-      setLinkedBank({
-        ...found,
-        accountNumber: offlineUser.accountNumber,
-      });
-    }
-  } else {
-    setMessage('User data not found.');
-  }
-}
+        // Check for all user fields, including phone, username, countryCode, accountNumber, debitCardNumber
+        if (
+          offlineUser &&
+          offlineUser.username === username &&
+          offlineUser.phone === phone &&
+          offlineUser.countryCode === countryCode &&
+          offlineUser.accountNumber === accountNumber &&
+          offlineUser.debitCardNumber === debitCard
+        ) {
+          setLocalUser(offlineUser);
+          setUsername(offlineUser.username);
+          setPhone(offlineUser.phone || '');
+          setCountryCode(offlineUser.countryCode || '');
+          setAccountNumber(offlineUser.accountNumber || '');
+          setDebitCard(offlineUser.debitCardNumber || '');
+          // Find linked bank in list
+          const found = bankList.find(
+            b => b.id === (offlineUser.bank || '').toLowerCase()
+          );
+          if (found) {
+            setLinkedBank({
+              ...found,
+              accountNumber: offlineUser.accountNumber,
+            });
+          }
+        } else {
+          setMessage('User data not found.');
+        }
+      }
     }
 
     fetchAppBackup();
@@ -159,35 +159,28 @@ export default function ClientComponent({ bankId }) {
     setMessage('');
     setOpenSnackbar(false);
 
-    try {
-      const res = await fetch('/api/auth/link', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          countryCode,
-          phone,
-          accountNumber,
-          debitCardNumber: debitCard,
-        }),
-      });
+    // Remove the API call as requested
+    // Instead, just do local validation or show a message
+    // If you want to simulate a success, you can do so here
 
-      const data = await res.json();
-      setApiResult(data);
-
-      if (res.ok && data.success && data.linked) {
-        sessionStorage.setItem('linked', 'true');
-        sessionStorage.setItem('username', username);
-        sessionStorage.setItem('phone', phone);
-        sessionStorage.setItem('countryCode', countryCode);
-        sessionStorage.setItem('accountNumber', accountNumber);
-        sessionStorage.setItem('debitCardNumber', debitCard);
-        setMessage('✅ Bank account linked successfully.');
-      } else {
-        sessionStorage.setItem('linked', 'false');
-        setMessage(data.message || '❌ Credentials check failed.');
-      }
-    } catch (error) {
-      setMessage('❌ Credentials check failed. Tried to fallback from backup.');
+    // Example: Simulate a local only success if all fields match localUser
+    if (
+      localUser &&
+      localUser.username === username &&
+      localUser.phone === phone &&
+      localUser.countryCode === countryCode &&
+      localUser.accountNumber === accountNumber &&
+      localUser.debitCardNumber === debitCard
+    ) {
+      sessionStorage.setItem('linked', 'true');
+      sessionStorage.setItem('username', username);
+      sessionStorage.setItem('phone', phone);
+      sessionStorage.setItem('countryCode', countryCode);
+      sessionStorage.setItem('accountNumber', accountNumber);
+      sessionStorage.setItem('debitCardNumber', debitCard);
+      setMessage('✅ Bank account linked successfully (local validation).');
+    } else {
+      setMessage('❌ Credentials check failed (local validation).');
     }
     setOpenSnackbar(true);
     setLoading(false);
