@@ -1,7 +1,7 @@
 'use client';
 
 import { Container, Typography, Box, Paper, List, ListItem, ListItemText } from '@mui/material';
-import FooterFinancialNav from '@/app/components/FooterFinancialNav';
+
 
 export default function CreditPage() {
   return (
@@ -28,12 +28,7 @@ export default function CreditPage() {
           </Paper>
         </Paper>
       </Container>
-      <FooterFinancialNav links={[
-        { href: '/budgeting', label: '💰 Budgeting' },
-        { href: '/saving', label: '🏦 Saving' },
-        { href: '/investment', label: '📈 Investment' },
-        { href: '/safety', label: '🛡️ Safety' }
-      ]} />
+ 
     </Box>
   );
 }
