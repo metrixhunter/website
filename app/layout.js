@@ -3,10 +3,8 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Container, Typography, Button, Box, Paper, Popover, Grid, List, ListItem, ListItemText, Divider, IconButton } from '@mui/material';
-import MenuIcon from '@mui/icons-material/Menu';
+import { Container, Typography, Button, Box, Paper, Popover, Grid, List, ListItem, ListItemText, Divider } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import CloseIcon from '@mui/icons-material/Close';
 import './globals.css';
 
 const exploreOptions = [
@@ -24,150 +22,168 @@ const calculatorOptions = [
   { label: "Currency Converter" },
   { label: "My Tools & Calculators" },
 ];
+// Footer: main links should navigate, others are placeholders
 const footerLinks = [
   {
-    title: "What's new",
-    links: ["FinEdge AI", "Financial Reports", "Upcoming Features", "Blog", "Webinars"]
+    title: "Explore",
+    links: [
+      { label: "Budgeting", href: "/budgeting" },
+      { label: "Credit", href: "/credit" },
+      { label: "Investment", href: "/investment" },
+      { label: "Saving", href: "/saving" },
+      { label: "Safety", href: "/safety" }
+    ]
   },
   {
-    title: "Learn",
-    links: ["Budgeting Basics", "Saving Tips", "Investment 101", "Credit Education", "Safety Guides"]
+    title: "What's new",
+    links: [
+      { label: "FinEdge AI" },
+      { label: "Financial Reports" },
+      { label: "Upcoming Features" },
+      { label: "Blog" },
+      { label: "Webinars" }
+    ]
   },
   {
     title: "Tools & Calculators",
-    links: ["EMI Calculator", "Loan Tools", "Currency Converter", "My Tools"]
+    links: [
+      { label: "EMI Calculator" },
+      { label: "Loan Tools" },
+      { label: "Currency Converter" },
+      { label: "My Tools" }
+    ]
   },
   {
     title: "Company",
-    links: ["About", "Support", "Careers", "Privacy", "Terms"]
+    links: [
+      { label: "About" },
+      { label: "Support" },
+      { label: "Careers" },
+      { label: "Privacy" },
+      { label: "Terms" }
+    ]
   }
 ];
 
 export default function Layout({ children }) {
   const pathname = usePathname();
-  return (
-    <html lang="en">
-      <body style={{
-        background: "#f5f8fa"
-      }}>
-        <MainHeader showLoginSignup={pathname === "/"} />
-        <main style={{ minHeight: "70vh" }}>
-          {pathname === "/" ? <MainPageContent /> : children}
-        </main>
-        <FooterLikeMicrosoft />
-      </body>
-    </html>
-  );
-}
+  // Only show header and main page content on "/"
+  const showHeaderAndMain = pathname === '/';
 
-function MainHeader({ showLoginSignup }) {
-  // Popover state
+  // Popover state only for header on main page
   const [exploreAnchor, setExploreAnchor] = useState(null);
   const [calcAnchor, setCalcAnchor] = useState(null);
 
   return (
-    <Box
-      sx={{
-        width: '100%',
-        px: 4,
-        py: 2,
-        bgcolor: "#fff",
-        boxShadow: '0 2px 8px 0 #0001',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        position: 'sticky',
-        top: 0,
-        zIndex: 100
-      }}
-    >
-      {/* Brand & Header */}
-      <Box sx={{ display: "flex", alignItems: "center", gap: 3 }}>
-        <Typography variant="h5" sx={{
-          color: "#283593",
-          fontWeight: 700,
-          fontFamily: "inherit",
-          letterSpacing: 1,
-          mr: 3
-        }}>
-          finedge
-        </Typography>
-        {/* Header buttons */}
-        <Box sx={{ display: "flex", gap: 1 }}>
-          <Button
-            color="primary"
-            endIcon={<ExpandMoreIcon />}
-            onClick={e => setExploreAnchor(e.currentTarget)}
-            sx={{ textTransform: "none", fontWeight: 600 }}
+    <html lang="en">
+      <body style={{ background: "#f5f8fa" }}>
+        {/* HEADER: only on main page */}
+        {showHeaderAndMain && (
+          <Box
+            sx={{
+              width: '100%',
+              px: 4,
+              py: 2,
+              bgcolor: "#fff",
+              boxShadow: '0 2px 8px 0 #0001',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              position: 'sticky',
+              top: 0,
+              zIndex: 100
+            }}
           >
-            Explore
-          </Button>
-          <Popover
-            open={Boolean(exploreAnchor)}
-            anchorEl={exploreAnchor}
-            onClose={() => setExploreAnchor(null)}
-            anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
-            transformOrigin={{ vertical: 'top', horizontal: 'left' }}
-          >
-            <Box sx={{ p: 1 }}>
-              {exploreOptions.map(opt =>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 3 }}>
+              <Typography variant="h5" sx={{
+                color: "#283593",
+                fontWeight: 700,
+                fontFamily: "inherit",
+                letterSpacing: 1,
+                mr: 3
+              }}>
+                finedge
+              </Typography>
+              <Box sx={{ display: "flex", gap: 1 }}>
                 <Button
-                  key={opt.label}
-                  href={opt.href}
-                  component={Link}
-                  fullWidth
-                  sx={{ justifyContent: "flex-start", fontWeight: 500 }}
-                  onClick={() => setExploreAnchor(null)}
+                  color="primary"
+                  endIcon={<ExpandMoreIcon />}
+                  onClick={e => setExploreAnchor(e.currentTarget)}
+                  sx={{ textTransform: "none", fontWeight: 600 }}
                 >
-                  {opt.label}
+                  Explore
                 </Button>
-              )}
-            </Box>
-          </Popover>
-          <Button
-            color="primary"
-            endIcon={<ExpandMoreIcon />}
-            onClick={e => setCalcAnchor(e.currentTarget)}
-            sx={{ textTransform: "none", fontWeight: 600 }}
-          >
-            Financial Tools & Calculators
-          </Button>
-          <Popover
-            open={Boolean(calcAnchor)}
-            anchorEl={calcAnchor}
-            onClose={() => setCalcAnchor(null)}
-            anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
-            transformOrigin={{ vertical: 'top', horizontal: 'left' }}
-          >
-            <Box sx={{ p: 1 }}>
-              {calculatorOptions.map(opt =>
+                <Popover
+                  open={Boolean(exploreAnchor)}
+                  anchorEl={exploreAnchor}
+                  onClose={() => setExploreAnchor(null)}
+                  anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+                  transformOrigin={{ vertical: 'top', horizontal: 'left' }}
+                >
+                  <Box sx={{ p: 1 }}>
+                    {exploreOptions.map(opt =>
+                      <Button
+                        key={opt.label}
+                        href={opt.href}
+                        component={Link}
+                        fullWidth
+                        sx={{ justifyContent: "flex-start", fontWeight: 500 }}
+                        onClick={() => setExploreAnchor(null)}
+                      >
+                        {opt.label}
+                      </Button>
+                    )}
+                  </Box>
+                </Popover>
                 <Button
-                  key={opt.label}
-                  fullWidth
-                  sx={{ justifyContent: "flex-start", fontWeight: 500 }}
-                  disabled // not functional for now
+                  color="primary"
+                  endIcon={<ExpandMoreIcon />}
+                  onClick={e => setCalcAnchor(e.currentTarget)}
+                  sx={{ textTransform: "none", fontWeight: 600 }}
                 >
-                  {opt.label}
+                  Financial Tools & Calculators
                 </Button>
-              )}
+                <Popover
+                  open={Boolean(calcAnchor)}
+                  anchorEl={calcAnchor}
+                  onClose={() => setCalcAnchor(null)}
+                  anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+                  transformOrigin={{ vertical: 'top', horizontal: 'left' }}
+                >
+                  <Box sx={{ p: 1 }}>
+                    {calculatorOptions.map(opt =>
+                      <Button
+                        key={opt.label}
+                        fullWidth
+                        sx={{ justifyContent: "flex-start", fontWeight: 500 }}
+                        disabled // not functional for now
+                      >
+                        {opt.label}
+                      </Button>
+                    )}
+                  </Box>
+                </Popover>
+                <Button color="primary" sx={{ textTransform: "none", fontWeight: 600 }} disabled>
+                  Support
+                </Button>
+                <Button color="primary" sx={{ textTransform: "none", fontWeight: 600 }} disabled>
+                  About
+                </Button>
+              </Box>
             </Box>
-          </Popover>
-          <Button color="primary" sx={{ textTransform: "none", fontWeight: 600 }} disabled>
-            Support
-          </Button>
-          <Button color="primary" sx={{ textTransform: "none", fontWeight: 600 }} disabled>
-            About
-          </Button>
-        </Box>
-      </Box>
-      {/* Login/Signup for main page only */}
-      {showLoginSignup && (
-        <Box sx={{ display: "flex", gap: 1 }}>
-          <Button variant="text" href="/login" sx={{ fontWeight: 500 }}>LOGIN</Button>
-          <Button variant="contained" color="secondary" href="/signup" sx={{ fontWeight: 600 }}>SIGNUP</Button>
-        </Box>
-      )}
-    </Box>
+            <Box sx={{ display: "flex", gap: 1 }}>
+              <Button variant="text" href="/login" sx={{ fontWeight: 500 }}>LOGIN</Button>
+              <Button variant="contained" color="secondary" href="/signup" sx={{ fontWeight: 600 }}>SIGNUP</Button>
+            </Box>
+          </Box>
+        )}
+        {/* MAIN CONTENT */}
+        <main style={{ minHeight: "70vh" }}>
+          {showHeaderAndMain ? <MainPageContent /> : children}
+        </main>
+        <FooterLikeMicrosoft />
+      </body>
+    </html>
   );
 }
 
@@ -238,6 +254,7 @@ function MainPageContent() {
   );
 }
 
+// Footer with navigation for main finance links
 function FooterLikeMicrosoft() {
   return (
     <Box sx={{
@@ -253,9 +270,29 @@ function FooterLikeMicrosoft() {
               <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 1 }}>{section.title}</Typography>
               <List dense>
                 {section.links.map(link =>
-                  <ListItem key={link} disablePadding>
-                    <ListItemText primary={<Typography sx={{ fontSize: "1rem", color: "#222" }}>{link}</Typography>} />
-                  </ListItem>
+                  link.href ? (
+                    <ListItem key={link.label} disablePadding>
+                      <Link href={link.href} passHref legacyBehavior>
+                        <ListItemText
+                          primary={
+                            <Typography sx={{ fontSize: "1rem", color: "#283593", cursor: "pointer" }}>
+                              {link.label}
+                            </Typography>
+                          }
+                        />
+                      </Link>
+                    </ListItem>
+                  ) : (
+                    <ListItem key={link.label} disablePadding>
+                      <ListItemText
+                        primary={
+                          <Typography sx={{ fontSize: "1rem", color: "#222" }}>
+                            {link.label}
+                          </Typography>
+                        }
+                      />
+                    </ListItem>
+                  )
                 )}
               </List>
             </Grid>
