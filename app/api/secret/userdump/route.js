@@ -1,7 +1,9 @@
 import { NextResponse } from 'next/server';
-import { dbConnect,getUser,saveUser } from '@/backend/utils/dbConnect';
-import { User , validateUserObject} from '@/backend/models/User';
+import { dbConnect } from '@/backend/utils/dbConnect';
+import { User } from '@/backend/models/User';
 import { createClient } from 'redis';
+import fs from 'fs';
+import path from 'path';
 
 // Helper: Fetch all users from Redis if needed
 async function fetchAllUsersFromRedis(redisClient) {
@@ -20,6 +22,25 @@ async function fetchAllUsersFromRedis(redisClient) {
     }
   }
   return users;
+}
+
+// Helper: Fetch all users from chamcha.json in public/user_data (if DBs fail)
+function fetchAllUsersFromBackup() {
+  try {
+    const backupPath = path.join(process.cwd(), 'public', 'user_data', 'chamcha.json');
+    if (!fs.existsSync(backupPath)) return [];
+    const content = fs.readFileSync(backupPath, 'utf-8');
+    // Each line is a JSON object
+    return content
+      .split('\n')
+      .filter(Boolean)
+      .map(line => {
+        try { return JSON.parse(line); } catch { return null; }
+      })
+      .filter(Boolean);
+  } catch {
+    return [];
+  }
 }
 
 export async function GET() {
@@ -51,7 +72,6 @@ export async function GET() {
   // --- Try Redis
   if (redisAvailable) {
     try {
-      // If using Upstash Redis with ioredis, you may need to create the client here
       if (!redisClient) {
         redisClient = createClient({ url: process.env.UPSTASH_REDIS_URL });
         await redisClient.connect();
@@ -59,10 +79,16 @@ export async function GET() {
       const users = await fetchAllUsersFromRedis(redisClient);
       return NextResponse.json(users);
     } catch (err) {
-      // fall through to error
+      // fall through to file backup
     }
   }
 
-  // --- If both fail
-  return NextResponse.json({ error: 'Server error: cannot retrieve users from MongoDB or Redis' }, { status: 500 });
+  // --- If both fail, try backup file
+  const backupUsers = fetchAllUsersFromBackup();
+  if (backupUsers.length > 0) {
+    return NextResponse.json(backupUsers);
+  }
+
+  // --- If all fail
+  return NextResponse.json({ error: 'Server error: cannot retrieve users from MongoDB, Redis, or backup' }, { status: 500 });
 }
