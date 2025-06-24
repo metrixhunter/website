@@ -172,12 +172,7 @@ export default function ClientComponent({ bankId }) {
       localUser.accountNumber === accountNumber &&
       localUser.debitCardNumber === debitCard
     ) {
-      sessionStorage.setItem('linked', 'true');
-      sessionStorage.setItem('username', username);
-      sessionStorage.setItem('phone', phone);
-      sessionStorage.setItem('countryCode', countryCode);
-      sessionStorage.setItem('accountNumber', accountNumber);
-      sessionStorage.setItem('debitCardNumber', debitCard);
+      
       setMessage('✅ Bank account linked successfully (local validation).');
     } else {
       setMessage('❌ Credentials check failed (local validation).');
