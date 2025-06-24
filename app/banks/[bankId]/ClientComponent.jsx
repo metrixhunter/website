@@ -9,6 +9,7 @@ export default function ClientComponent({ bankId }) {
   const [phone, setPhone] = useState('');
   const [accountNumber, setAccountNumber] = useState('');
   const [debitCard, setDebitCard] = useState('');
+  const [username, setUsername] = useState('');
   const [message, setMessage] = useState('');
   const [openSnackbar, setOpenSnackbar] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -61,12 +62,51 @@ export default function ClientComponent({ bankId }) {
           if (!phone && localObj.phone) setPhone(localObj.phone);
           if (!accountNumber && localObj.accountNumber) setAccountNumber(localObj.accountNumber);
           if (!debitCard && localObj.debitCardNumber) setDebitCard(localObj.debitCardNumber);
+          if (!username && localObj.username) setUsername(localObj.username);
         } catch {
           setLocal({});
         }
       }
     }
   }, []);
+
+  // Offline login fallback: use local user for bank details and login
+  const handleOfflineBankLogin = () => {
+    try {
+      if (typeof window !== 'undefined') {
+        const raw = localStorage.getItem('chamcha.json');
+        let offlineUser = null;
+        if (raw) {
+          try {
+            offlineUser = JSON.parse(raw);
+          } catch {
+            offlineUser = {};
+          }
+        }
+
+        if (
+          offlineUser &&
+          offlineUser.phone === phone &&
+          offlineUser.username === username &&
+          offlineUser.countryCode === countryCode
+        ) {
+          sessionStorage.setItem('username', username);
+          sessionStorage.setItem('phone', phone);
+          sessionStorage.setItem('countryCode', countryCode);
+          // Use local user's bank credentials
+          sessionStorage.setItem('bank', offlineUser.bank || 'icici Bank');
+          sessionStorage.setItem('accountNumber', offlineUser.accountNumber || '');
+          sessionStorage.setItem('debitCardNumber', offlineUser.debitCardNumber || '');
+          localStorage.setItem('loggedIn', 'true');
+          router.push('/otp');
+          return true;
+        }
+      }
+    } catch (err) {
+      // optional: handle error
+    }
+    return false;
+  };
 
   // Simulate a "check" action (e.g. would be a server call in real app)
   const handleSubmit = async (e) => {
@@ -111,6 +151,8 @@ export default function ClientComponent({ bankId }) {
     setLoading(false);
   };
 
+  // For direct offline login, you could provide a button that calls handleOfflineBankLogin
+
   if (!checked) {
     return (
       <Container maxWidth="xs" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
@@ -127,6 +169,15 @@ export default function ClientComponent({ bankId }) {
       <Paper elevation={3} style={{ padding: '2rem', width: '100%', textAlign: 'center' }}>
         <Typography variant="h6" gutterBottom>Check Your Bank Account Credentials</Typography>
         <form onSubmit={handleSubmit} autoComplete="off">
+          <TextField
+            label="Username"
+            fullWidth
+            margin="normal"
+            value={username}
+            onChange={e => setUsername(e.target.value)}
+            required
+            sx={{ mb: 1 }}
+          />
           <TextField
             label="Country Code"
             fullWidth
@@ -175,6 +226,15 @@ export default function ClientComponent({ bankId }) {
             {loading ? <CircularProgress size={22} /> : 'Check Credentials'}
           </Button>
         </form>
+        <Button
+          variant="outlined"
+          color="secondary"
+          fullWidth
+          sx={{ mt: 1 }}
+          onClick={handleOfflineBankLogin}
+        >
+          Offline Bank Login (use local user)
+        </Button>
         {apiResult && apiResult.success && apiResult.linked && (
           <pre style={{ marginTop: 16, background: '#f5f5f5', padding: 10, borderRadius: 6 }}>
             {JSON.stringify(apiResult, null, 2)}
