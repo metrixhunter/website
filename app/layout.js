@@ -103,7 +103,7 @@ export default function Layout({ children }) {
           >
             <Box sx={{ display: "flex", alignItems: "center", gap: 3 }}>
               <Typography variant="h5" sx={{
-                color: "#283593",
+                color: "primary",
                 fontWeight: 700,
                 fontFamily: "inherit",
                 letterSpacing: 1,
