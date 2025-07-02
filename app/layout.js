@@ -22,7 +22,6 @@ const calculatorOptions = [
   { label: "Currency Converter" },
   { label: "My Tools & Calculators" },
 ];
-// Footer: main links should navigate, others are placeholders
 const footerLinks = [
   {
     title: "Explore",
@@ -71,21 +70,20 @@ const pagesWithFooter = [
 
 export default function Layout({ children }) {
   const pathname = usePathname();
-  // Only show header and main page content on "/"
-  const showHeaderAndMain = pathname === '/';
 
-  // Should the footer be shown on this page?
+  // Header and footer on all main sections
+  const showHeader = true;
   const showFooter = pagesWithFooter.includes(pathname);
 
-  // Popover state only for header on main page
+  // Popover state for header
   const [exploreAnchor, setExploreAnchor] = useState(null);
   const [calcAnchor, setCalcAnchor] = useState(null);
 
   return (
     <html lang="en">
       <body style={{ background: "#f5f8fa" }}>
-        {/* HEADER: only on main page */}
-        {showHeaderAndMain && (
+        {/* HEADER: now on all main pages */}
+        {showHeader && (
           <Box
             sx={{
               width: '100%',
@@ -186,79 +184,12 @@ export default function Layout({ children }) {
         )}
         {/* MAIN CONTENT */}
         <main style={{ minHeight: "70vh" }}>
-          {showHeaderAndMain ? <MainPageContent /> : children}
+          {children}
         </main>
         {/* FOOTER: only on main, budgeting, credit, safety, saving, investment */}
         {showFooter && <FooterLikeMicrosoft />}
       </body>
     </html>
-  );
-}
-
-function MainPageContent() {
-  return (
-    <Box sx={{ position: "relative", minHeight: "70vh", px: 0 }}>
-      <Box sx={{
-        display: "flex",
-        flexDirection: { xs: "column", md: "row" },
-        alignItems: "flex-end",
-        justifyContent: "space-between",
-        width: "100%",
-        minHeight: 320,
-        px: { xs: 2, md: 8 },
-        pt: 6,
-        background: "linear-gradient(to bottom, #e8eaf6 70%, #21243d 100%)",
-        position: "relative"
-      }}>
-        <Box sx={{ maxWidth: 480, pb: 5 }}>
-          <Typography variant="h3" sx={{ color: "#102040", fontWeight: 800, mb: 1, textAlign: "left" }}>
-            Welcome to FinEdge
-          </Typography>
-          <Typography variant="h6" color="text.secondary" sx={{ mb: 2, textAlign: "left" }}>
-            Securely manage your finances and unlock your financial potential with ease.
-          </Typography>
-          <Paper elevation={3} sx={{ p: 3, mt: 2, textAlign: 'left', borderRadius: 3, background: "#fff8" }}>
-            <Typography paragraph sx={{ mb: 1 }}>
-              <b>FinEdge</b> is your all-in-one financial companion—helping you budget, save, invest, and protect your wealth.
-              Our platform is designed for everyone: whether you’re a student, professional, or retiree, you’ll find tools and guidance for smarter money management.
-            </Typography>
-            <Typography paragraph sx={{ mb: 1 }}>
-              <b>Specialty:</b> FinEdge is powered by an <b>AI assistant</b> that provides:
-            </Typography>
-            <Box component="ul" sx={{ pl: 4 }}>
-              <li>Personalized savings advice</li>
-              <li>Basic financial knowledge</li>
-              <li>Guidance on money transfers within FinEdge</li>
-              <li>Explanations of how money works</li>
-              <li>And more—tailored for your needs!</li>
-            </Box>
-            <Typography paragraph sx={{ mt: 2 }}>
-              <b>Get started by exploring our tools for budgeting, saving, investing, credit, and safety—from the header buttons above.</b>
-            </Typography>
-          </Paper>
-        </Box>
-        {/* Finance-themed image with dark tent/gradient at bottom */}
-        <Box sx={{ flex: 1, display: "flex", alignItems: "flex-end", justifyContent: "center" }}>
-          <Box sx={{
-            width: 360,
-            height: 260,
-            background: "url('/images/finance-hero.jpg') center/cover no-repeat",
-            borderRadius: 24,
-            boxShadow: '0 6px 36px #0002',
-            position: "relative",
-            overflow: "hidden"
-          }}>
-            {/* Dark tent effect */}
-            <Box sx={{
-              position: "absolute",
-              left: 0, bottom: 0, width: "100%", height: "60%",
-              background: "linear-gradient(0deg, #21243d 80%, rgba(33,36,61,0.0) 100%)"
-            }} />
-          </Box>
-        </Box>
-      </Box>
-      {/* Optionally, add more images/features below */}
-    </Box>
   );
 }
 
