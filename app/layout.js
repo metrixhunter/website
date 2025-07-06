@@ -65,27 +65,28 @@ const footerLinks = [
   }
 ];
 
-const pagesWithFooter = [
+// Pages where the header and/or footer should appear
+const mainHeaderPages = [
   '/', '/budgeting', '/credit', '/safety', '/saving', '/investment'
 ];
+const showFooterPages = mainHeaderPages;
 
 export default function Layout({ children }) {
   const pathname = usePathname();
-  // Only show header and main page content on "/"
-  const showHeaderAndMain = pathname === '/';
+  // Show header on main and all finance pages
+  const showHeader = mainHeaderPages.includes(pathname);
+  // Show footer on main and all finance pages
+  const showFooter = showFooterPages.includes(pathname);
 
-  // Should the footer be shown on this page?
-  const showFooter = pagesWithFooter.includes(pathname);
-
-  // Popover state only for header on main page
+  // Popover state for header
   const [exploreAnchor, setExploreAnchor] = useState(null);
   const [calcAnchor, setCalcAnchor] = useState(null);
 
   return (
     <html lang="en">
       <body style={{ background: "#f5f8fa" }}>
-        {/* HEADER: only on main page */}
-        {showHeaderAndMain && (
+        {/* HEADER: on main + all finance pages */}
+        {showHeader && (
           <Box
             sx={{
               width: '100%',
@@ -103,7 +104,7 @@ export default function Layout({ children }) {
           >
             <Box sx={{ display: "flex", alignItems: "center", gap: 3 }}>
               <Typography variant="h5" sx={{
-                color: "primary",
+                color: "#283593",
                 fontWeight: 700,
                 fontFamily: "inherit",
                 letterSpacing: 1,
@@ -178,15 +179,18 @@ export default function Layout({ children }) {
                 </Button>
               </Box>
             </Box>
-            <Box sx={{ display: "flex", gap: 1 }}>
-              <Button variant="text" href="/login" sx={{ fontWeight: 500 }}>LOGIN</Button>
-              <Button variant="contained" color="secondary" href="/signup" sx={{ fontWeight: 600 }}>SIGNUP</Button>
-            </Box>
+            {pathname === '/' && (
+              <Box sx={{ display: "flex", gap: 1 }}>
+                <Button variant="text" href="/login" sx={{ fontWeight: 500 }}>LOGIN</Button>
+                <Button variant="contained" color="secondary" href="/signup" sx={{ fontWeight: 600 }}>SIGNUP</Button>
+              </Box>
+            )}
           </Box>
         )}
         {/* MAIN CONTENT */}
         <main style={{ minHeight: "70vh" }}>
-          {showHeaderAndMain ? <MainPageContent /> : children}
+          {/* Only show main page content on /, else children */}
+          {pathname === '/' ? <MainPageContent /> : children}
         </main>
         {/* FOOTER: only on main, budgeting, credit, safety, saving, investment */}
         {showFooter && <FooterLikeMicrosoft />}
