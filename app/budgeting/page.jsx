@@ -7,8 +7,9 @@ export default function BudgetingPage() {
     <Box
       sx={{
         minHeight: "100vh",
-        background: "linear-gradient(to bottom, #e8eaf6 70%, #21243d 100%)",
-        position: "relative"
+        background: "url('/images/finance-budgeting.jpg') center/cover no-repeat, linear-gradient(to bottom, #e8eaf6 70%, #21243d 100%)",
+        position: "relative",
+        boxShadow: '0 6px 36px #0002',
       }}
     >
       <Container maxWidth="md" sx={{ py: 8, display: "flex", flexDirection: "row", alignItems: "flex-end", minHeight: 480 }}>
@@ -36,8 +37,8 @@ export default function BudgetingPage() {
         </Box>
         <Box sx={{ flex: 1, display: "flex", alignItems: "flex-end", justifyContent: "center" }}>
           <Box sx={{
-            width: 340, height: 220,
-            background: "url('/images/finance-hero.jpg') center/cover no-repeat",
+            width: 0, height: 0,
+            background: "",
             borderRadius: 24,
             boxShadow: '0 6px 36px #0002',
             position: "relative",
@@ -46,7 +47,8 @@ export default function BudgetingPage() {
             <Box sx={{
               position: "absolute",
               left: 0, bottom: 0, width: "100%", height: "60%",
-              background: "linear-gradient(0deg, #21243d 80%, rgba(33,36,61,0.0) 100%)"
+              background: "url('/images/finance-budgeting.jpg') center/cover no-repeat, linear-gradient(to bottom, #e8eaf6 70%, #21243d 100%)",
+              boxShadow: '0 6px 36px #0002',
             }} />
           </Box>
         </Box>

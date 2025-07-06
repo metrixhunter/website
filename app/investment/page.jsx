@@ -7,7 +7,7 @@ export default function InvestmentPage() {
     <Box
       sx={{
         minHeight: "100vh",
-        background: "linear-gradient(to bottom, #e8eaf6 70%, #21243d 100%)",
+        background: "url('/images/finance-investment.webp') center/cover no-repeat, linear-gradient(to bottom, #e8eaf6 70%, #21243d 100%)",
         position: "relative"
       }}
     >
@@ -33,18 +33,18 @@ export default function InvestmentPage() {
           </Paper>
         </Box>
         <Box sx={{ flex: 1, display: "flex", alignItems: "flex-end", justifyContent: "center" }}>
-          <Box sx={{
-            width: 340, height: 220,
-            background: "url('/images/finance-hero.jpg') center/cover no-repeat",
+           <Box sx={{
+            width: 0, height: 0,
+            background: "",
             borderRadius: 24,
             boxShadow: '0 6px 36px #0002',
             position: "relative",
             overflow: "hidden"
           }}>
             <Box sx={{
-              position: "absolute",
+              position: "relative",
               left: 0, bottom: 0, width: "100%", height: "60%",
-              background: "linear-gradient(0deg, #21243d 80%, rgba(33,36,61,0.0) 100%)"
+              background: "url('/images/finance-investment.webp') center/cover no-repeat, linear-gradient(0deg, #21243d 80%, rgba(33,36,61,0.0) 100%)"
             }} />
           </Box>
         </Box>
