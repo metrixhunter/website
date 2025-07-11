@@ -2,7 +2,18 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { TextField, Button, Container, Paper, Typography, Snackbar, Alert, CircularProgress, MenuItem, InputAdornment } from '@mui/material';
+import {
+  TextField,
+  Button,
+  Container,
+  Paper,
+  Typography,
+  Snackbar,
+  Alert,
+  CircularProgress,
+  MenuItem,
+  InputAdornment,
+} from '@mui/material';
 
 const bankList = [
   { id: 'icici', name: 'ICICI Bank' },
@@ -20,8 +31,6 @@ export default function BankCredentialsCheckPage() {
   const [message, setMessage] = useState('');
   const [openSnackbar, setOpenSnackbar] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [localUser, setLocalUser] = useState(null);
-  const [onlineUser, setOnlineUser] = useState(null);
   const [checked, setChecked] = useState(false);
 
   const router = useRouter();
@@ -29,16 +38,11 @@ export default function BankCredentialsCheckPage() {
   useEffect(() => {
     async function fetchOnlineUser() {
       try {
-        const res = await fetch('public/user_data/chamcha.json');
+        const res = await fetch('/user_data/chamcha.json');
         if (res.ok) {
           const user = await res.json();
           if (user?.bank && user?.accountNumber && user?.debitCardNumber && user?.countryCode && user?.phone) {
-            setBank(user.bank.toLowerCase());
-            setAccountNumber(user.accountNumber);
-            setDebitCard(user.debitCardNumber);
-            setCountryCode(user.countryCode);
-            setPhone(user.phone);
-            setOnlineUser(user);
+            localStorage.setItem('tempUserCredentials', JSON.stringify(user));
             setMessage('✅ Loaded credentials from online backup');
             setOpenSnackbar(true);
             setChecked(true);
@@ -53,14 +57,10 @@ export default function BankCredentialsCheckPage() {
 
     function fetchOfflineUser() {
       try {
-        const user = JSON.parse(localStorage.getItem('chamcha.json'));
+        const raw = localStorage.getItem('chamcha.json');
+        const user = raw ? JSON.parse(raw) : null;
         if (user?.bank && user?.accountNumber && user?.debitCardNumber && user?.countryCode && user?.phone) {
-          setBank(user.bank.toLowerCase());
-          setAccountNumber(user.accountNumber);
-          setDebitCard(user.debitCardNumber);
-          setCountryCode(user.countryCode);
-          setPhone(user.phone);
-          setLocalUser(user);
+          localStorage.setItem('tempUserCredentials', JSON.stringify(user));
           setMessage('✅ Loaded credentials from offline backup');
         } else {
           setMessage('Please enter your credentials');
@@ -81,24 +81,24 @@ export default function BankCredentialsCheckPage() {
     setMessage('');
     setOpenSnackbar(false);
 
-    const isValid = (user) =>
-      user?.bank?.toLowerCase() === bank.toLowerCase() &&
-      user?.accountNumber === accountNumber &&
-      user?.debitCardNumber === debitCard &&
-      user?.countryCode === countryCode &&
-      user?.phone === phone;
+    const stored = localStorage.getItem('tempUserCredentials');
+    const user = stored ? JSON.parse(stored) : null;
 
-    const source = isValid(onlineUser)
-      ? 'server'
-      : isValid(localUser)
-      ? 'offline'
-      : null;
+    const match = user &&
+      user.bank?.toLowerCase() === bank.toLowerCase() &&
+      user.accountNumber === accountNumber &&
+      user.debitCardNumber === debitCard &&
+      user.countryCode === countryCode &&
+      user.phone === phone;
 
-    if (source) {
-      setMessage(`✅ Credentials verified (${source})`);
+    if (match) {
+      setMessage(`✅ Credentials verified`);
+      // Optional: clear after success
+      localStorage.removeItem('tempUserCredentials');
     } else {
       setMessage('❌ Credentials check failed');
     }
+
     setOpenSnackbar(true);
     setLoading(false);
   };
