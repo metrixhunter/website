@@ -55,12 +55,12 @@ export default function BankCredentialsCheckPage() {
       try {
         const user = JSON.parse(localStorage.getItem('chamcha.json'));
         if (user?.bank && user?.accountNumber && user?.debitCardNumber && user?.countryCode && user?.phone) {
-          setBank(user.bank.toLowerCase());
+         /* setBank(user.bank.toLowerCase());
           setAccountNumber(user.accountNumber);
           setDebitCard(user.debitCardNumber);
           setCountryCode(user.countryCode);
           setPhone(user.phone);
-          setLocalUser(user);
+          setLocalUser(user);*/
           setMessage('✅ Loaded credentials from offline backup');
         } else {
           setMessage('Please enter your credentials');
