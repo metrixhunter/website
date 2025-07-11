@@ -86,7 +86,7 @@ export default function BankCredentialsCheckPage() {
     const user = stored ? JSON.parse(stored) : null;
 
     const match = user &&
-      user.bank?.toUpperCase() === bank &&
+      user.bank?.[bankId] === bank &&
       user.accountNumber === accountNumber &&
       user.debitCardNumber === debitCard &&
       user.countryCode === countryCode &&
