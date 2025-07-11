@@ -296,6 +296,8 @@ export default function BankCredentialsCheckPage() {
       setMessage(`✅ Credentials verified`);
       // Optional: clear after success
       localStorage.removeItem('tempUserCredentials');
+      sessionStorage.setItem('linked', 'true'); // mark as linked
+      router.push('/balance'); // redirect to banks page
     } else {
       setMessage('❌ Credentials check failed');
     }
