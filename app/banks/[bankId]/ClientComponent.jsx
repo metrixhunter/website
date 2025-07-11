@@ -2,180 +2,102 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { TextField, Button, Container, Paper, Typography, Snackbar, Alert, CircularProgress, InputAdornment } from '@mui/material';
+import { TextField, Button, Container, Paper, Typography, Snackbar, Alert, CircularProgress, MenuItem, InputAdornment } from '@mui/material';
 
-// Optionally, you could get bankList from props or a helper
 const bankList = [
-  { id: 'icici bank', name: 'ICICI Bank' },
-  { id: 'hdfc bank', name: 'HDFC Bank' },
+  { id: 'icici', name: 'ICICI Bank' },
+  { id: 'hdfc', name: 'HDFC Bank' },
   { id: 'sbi', name: 'State Bank of India' },
-  // ...add more as needed
+  { id: 'axis', name: 'Axis Bank' },
 ];
 
-export default function ClientComponent({ bankId }) {
-  const [countryCode, setCountryCode] = useState('');
-  const [phone, setPhone] = useState('');
+export default function BankCredentialsCheckPage() {
+  const [bank, setBank] = useState('');
   const [accountNumber, setAccountNumber] = useState('');
   const [debitCard, setDebitCard] = useState('');
-  const [username, setUsername] = useState('');
+  const [countryCode, setCountryCode] = useState('');
+  const [phone, setPhone] = useState('');
   const [message, setMessage] = useState('');
   const [openSnackbar, setOpenSnackbar] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [checked, setChecked] = useState(false);
-  const [apiResult, setApiResult] = useState(null);
-
-  // Local user and linked bank info
   const [localUser, setLocalUser] = useState(null);
-  const [linkedBank, setLinkedBank] = useState(null);
+  const [onlineUser, setOnlineUser] = useState(null);
+  const [checked, setChecked] = useState(false);
 
   const router = useRouter();
 
-  // On mount: try sessionStorage, then public chamcha.json, then localStorage chamcha.json
   useEffect(() => {
-    const linked = sessionStorage.getItem('linked');
-    if (linked === 'true') {
-      setMessage('✅ Bank credentials previously verified.');
-    } else {
-      setMessage('Fill and check your credentials below.');
-    }
-    setChecked(true);
-    setOpenSnackbar(true);
-
-    // Try sessionStorage first
-    const sessionUser = sessionStorage.getItem('username');
-    const sessionPhone = sessionStorage.getItem('phone');
-    const sessionCountry = sessionStorage.getItem('countryCode');
-    const sessionAccountNumber = sessionStorage.getItem('accountNumber');
-    const sessionDebitCardNumber = sessionStorage.getItem('debitCardNumber');
-    if (
-      sessionUser &&
-      sessionPhone &&
-      sessionCountry &&
-      sessionAccountNumber &&
-      sessionDebitCardNumber
-    ) {
-      setUsername(sessionUser);
-      setPhone(sessionPhone);
-      setCountryCode(sessionCountry);
-      setAccountNumber(sessionAccountNumber);
-      setDebitCard(sessionDebitCardNumber);
-      return;
-    }
-
-    // If sessionStorage is missing fields, try public/chamcha.json
-    async function fetchAppBackup() {
+    async function fetchOnlineUser() {
       try {
-        const res = await fetch('/chamcha.json');
+        const res = await fetch('public/user_data/chamcha.json');
         if (res.ok) {
-          const text = await res.text();
-          const lines = text.split('\n').filter(Boolean);
-          let foundUser = false;
-          for (const line of lines) {
-            try {
-              const obj = JSON.parse(line);
-              if (
-                obj &&
-                obj.username &&
-                obj.phone &&
-                obj.countryCode &&
-                obj.accountNumber &&
-                obj.debitCardNumber
-              ) {
-                setUsername(obj.username);
-                setPhone(obj.phone);
-                setCountryCode(obj.countryCode);
-                setAccountNumber(obj.accountNumber);
-                setDebitCard(obj.debitCardNumber);
-                foundUser = true;
-                break;
-              }
-            } catch {}
+          const user = await res.json();
+          if (user?.bank && user?.accountNumber && user?.debitCardNumber && user?.countryCode && user?.phone) {
+            setBank(user.bank.toLowerCase());
+            setAccountNumber(user.accountNumber);
+            setDebitCard(user.debitCardNumber);
+            setCountryCode(user.countryCode);
+            setPhone(user.phone);
+            setOnlineUser(user);
+            setMessage('✅ Loaded credentials from online backup');
+            setOpenSnackbar(true);
+            setChecked(true);
+            return;
           }
-          if (!foundUser) {
-            // If no user found in chamcha.json, try localStorage
-            findLocalUser();
-          }
+        }
+        fetchOfflineUser();
+      } catch {
+        fetchOfflineUser();
+      }
+    }
+
+    function fetchOfflineUser() {
+      try {
+        const user = JSON.parse(localStorage.getItem('chamcha.json'));
+        if (user?.bank && user?.accountNumber && user?.debitCardNumber && user?.countryCode && user?.phone) {
+          setBank(user.bank.toLowerCase());
+          setAccountNumber(user.accountNumber);
+          setDebitCard(user.debitCardNumber);
+          setCountryCode(user.countryCode);
+          setPhone(user.phone);
+          setLocalUser(user);
+          setMessage('✅ Loaded credentials from offline backup');
         } else {
-          // If fetch fails, try localStorage
-          findLocalUser();
+          setMessage('Please enter your credentials');
         }
       } catch {
-        // If fetch error, try localStorage
-        findLocalUser();
+        setMessage('Please enter your credentials');
       }
+      setOpenSnackbar(true);
+      setChecked(true);
     }
 
-    // Try localStorage chamcha.json as final fallback (for offline/local user)
-    function findLocalUser() {
-      if (typeof window !== 'undefined') {
-        const item = localStorage.getItem('chamcha.json');
-        let offlineUser = null;
-        if (item) {
-          try {
-            offlineUser = JSON.parse(item);
-          } catch {
-            offlineUser = {};
-          }
-        }
-
-        // Check for all user fields, including phone, username, countryCode, accountNumber, debitCardNumber
-        if (
-          offlineUser &&
-          offlineUser.username === username &&
-          offlineUser.phone === phone &&
-          offlineUser.countryCode === countryCode &&
-          offlineUser.accountNumber === accountNumber &&
-          offlineUser.debitCardNumber === debitCard
-        ) {
-          setLocalUser(offlineUser);
-          setUsername(offlineUser.username);
-          setPhone(offlineUser.phone || '');
-          setCountryCode(offlineUser.countryCode || '');
-          setAccountNumber(offlineUser.accountNumber || '');
-          setDebitCard(offlineUser.debitCardNumber || '');
-          // Find linked bank in list
-          const found = bankList.find(
-            b => b.id === (offlineUser.bank || '').toLowerCase()
-          );
-          if (found) {
-            setLinkedBank({
-              ...found,
-              accountNumber: offlineUser.accountNumber,
-            });
-          }
-        } else {
-          setMessage('User data not found.');
-        }
-      }
-    }
-
-    fetchAppBackup();
+    fetchOnlineUser();
   }, []);
 
-  // Simulate a "check" action (e.g. would be a server call in real app)
-  const handleSubmit = async (e) => {
+  const handleCheck = (e) => {
     e.preventDefault();
     setLoading(true);
     setMessage('');
     setOpenSnackbar(false);
 
-    // Remove the API call as requested
-    // Instead, just do local validation or show a message
-    // If you want to simulate a success, you can do so here
+    const isValid = (user) =>
+      user?.bank?.toLowerCase() === bank.toLowerCase() &&
+      user?.accountNumber === accountNumber &&
+      user?.debitCardNumber === debitCard &&
+      user?.countryCode === countryCode &&
+      user?.phone === phone;
 
-    // Example: Simulate a local only success if all fields match localUser
-    if (
-      localUser &&
-      localUser.username === username &&
-      localUser.phone === phone &&
-      localUser.countryCode === countryCode &&
-      localUser.accountNumber === accountNumber &&
-      localUser.debitCardNumber === debitCard
-    ) {
-      
-      setMessage('✅ Bank account linked successfully (local validation).');
+    const source = isValid(onlineUser)
+      ? 'server'
+      : isValid(localUser)
+      ? 'offline'
+      : null;
+
+    if (source) {
+      setMessage(`✅ Credentials verified (${source})`);
     } else {
-      setMessage('❌ Credentials check failed (local validation).');
+      setMessage('❌ Credentials check failed');
     }
     setOpenSnackbar(true);
     setLoading(false);
@@ -183,71 +105,38 @@ export default function ClientComponent({ bankId }) {
 
   if (!checked) {
     return (
-      <Container maxWidth="xs" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
-        <Paper elevation={3} style={{ padding: '2rem', width: '100%', textAlign: 'center' }}>
-          <Typography variant="h6" gutterBottom>Checking previous status...</Typography>
-          <CircularProgress />
-        </Paper>
+      <Container maxWidth="xs" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
+        <CircularProgress />
       </Container>
     );
   }
 
-  const showUserNotFound =
-    !username || !accountNumber || !debitCard || !phone || !countryCode;
-
   return (
     <Container maxWidth="xs" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
       <Paper elevation={3} style={{ padding: '2rem', width: '100%', textAlign: 'center' }}>
-        <Typography variant="h6" gutterBottom>Check Your Bank Account Credentials</Typography>
-        {showUserNotFound ? (
-          <Alert severity="warning" sx={{ mb: 2 }}>
-            User data not found. Please enter your details.
-          </Alert>
-        ) : null}
-        <form onSubmit={handleSubmit} autoComplete="off">
+        <Typography variant="h6" gutterBottom>
+          Verify Bank Credentials
+        </Typography>
+        <form onSubmit={handleCheck} autoComplete="off">
           <TextField
-            label="Username"
+            label="Bank"
+            select
             fullWidth
             margin="normal"
-            value={username}
-            onChange={e => setUsername(e.target.value)}
+            value={bank}
+            onChange={(e) => setBank(e.target.value)}
             required
-            sx={{ mb: 1 }}
-          />
-          <TextField
-            label="Country Code"
-            fullWidth
-            margin="normal"
-            value={countryCode}
-            onChange={e => setCountryCode(e.target.value)}
-            required
-            sx={{ mb: 1 }}
-            inputProps={{ maxLength: 5 }}
-          />
-          <TextField
-            label="Phone Number"
-            fullWidth
-            margin="normal"
-            value={phone}
-            onChange={e => setPhone(e.target.value)}
-            required
-            sx={{ mb: 1 }}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <Typography variant="body2">{countryCode}</Typography>
-                </InputAdornment>
-              ),
-              inputMode: "numeric",
-              pattern: "[0-9]*"
-            }}
-          />
+          >
+            {bankList.map((b) => (
+              <MenuItem key={b.id} value={b.id}>{b.name}</MenuItem>
+            ))}
+          </TextField>
           <TextField
             label="Account Number"
             fullWidth
             margin="normal"
             value={accountNumber}
-            onChange={e => setAccountNumber(e.target.value)}
+            onChange={(e) => setAccountNumber(e.target.value)}
             required
           />
           <TextField
@@ -255,23 +144,44 @@ export default function ClientComponent({ bankId }) {
             fullWidth
             margin="normal"
             value={debitCard}
-            onChange={e => setDebitCard(e.target.value)}
+            onChange={(e) => setDebitCard(e.target.value)}
             required
           />
-          <Button variant="contained" color="primary" fullWidth type="submit" sx={{ mt: 2 }} disabled={loading}>
-            {loading ? <CircularProgress size={22} /> : 'Check Credentials'}
+          <TextField
+            label="Country Code"
+            fullWidth
+            margin="normal"
+            value={countryCode}
+            onChange={(e) => setCountryCode(e.target.value)}
+            required
+          />
+          <TextField
+            label="Phone Number"
+            fullWidth
+            margin="normal"
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+            required
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <Typography variant="body2">{countryCode}</Typography>
+                </InputAdornment>
+              ),
+              inputMode: 'numeric',
+            }}
+          />
+          <Button
+            variant="contained"
+            color="primary"
+            fullWidth
+            type="submit"
+            style={{ marginTop: '1rem' }}
+            disabled={loading}
+          >
+            {loading ? <CircularProgress size={24} /> : 'Verify Credentials'}
           </Button>
         </form>
-        {linkedBank && (
-          <Alert severity="info" sx={{ mt: 2 }}>
-            Linked bank: {linkedBank.name} (Account: {linkedBank.accountNumber})
-          </Alert>
-        )}
-        {apiResult && apiResult.success && apiResult.linked && (
-          <pre style={{ marginTop: 16, background: '#f5f5f5', padding: 10, borderRadius: 6 }}>
-            {JSON.stringify(apiResult, null, 2)}
-          </pre>
-        )}
       </Paper>
       <Snackbar open={openSnackbar} autoHideDuration={3000} onClose={() => setOpenSnackbar(false)}>
         <Alert severity={message.includes('✅') ? 'success' : 'error'}>{message}</Alert>
