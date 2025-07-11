@@ -29,7 +29,7 @@ export default function BankCredentialsCheckPage() {
 
   useEffect(() => {
     const sessionBank = sessionStorage.getItem('bank');
-    if (sessionBank) setBank(sessionBank.toLowerCase());
+    if (sessionBank) setBank(sessionBank.toUpperCase());
 
     async function fetchOnlineUser() {
       try {
@@ -86,7 +86,7 @@ export default function BankCredentialsCheckPage() {
     const user = stored ? JSON.parse(stored) : null;
 
     const match = user &&
-      user.bank?.toLowerCase() === bank &&
+      user.bank?.toUpperCase() === bank &&
       user.accountNumber === accountNumber &&
       user.debitCardNumber === debitCard &&
       user.countryCode === countryCode &&
