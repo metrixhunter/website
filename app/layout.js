@@ -30,8 +30,8 @@ const footerLinks = [
       { label: "Budgeting", href: "/budgeting" },
       { label: "Credit", href: "/credit" },
       { label: "Investment", href: "/investment" },
-      { label: "Saving", href: "/safety" },
-      { label: "Safety", href: "/savings" }
+      { label: "Saving", href: "/saving" },
+      { label: "Safety", href: "/safety" }
     ]
   },
   {
