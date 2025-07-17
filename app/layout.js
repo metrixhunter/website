@@ -10,8 +10,8 @@ import './globals.css';
 const exploreOptions = [
   { label: "Budgeting", href: "/budgeting" },
   { label: "Credit", href: "/credit" },
-  { label: "Safety", href: "/saving" },
-  { label: "Saving", href: "/safety" },
+  { label: "Saving", href: "/saving" },
+  { label: "Safety", href: "/safety" },
   { label: "Investment", href: "/investment" },
 ];
 const calculatorOptions = [
@@ -30,8 +30,8 @@ const footerLinks = [
       { label: "Budgeting", href: "/budgeting" },
       { label: "Credit", href: "/credit" },
       { label: "Investment", href: "/investment" },
-      { label: "Safety", href: "/saving" },
-      { label: "Saving", href: "/safety" }
+      { label: "Saving", href: "/saving" },
+      { label: "Safety", href: "/safety" }
     ]
   },
   {
