@@ -105,14 +105,14 @@ export default function BankCredentialsCheckPage() {
         <Typography variant="h6" gutterBottom>
           Verify Bank Credentials
         </Typography>
-        <form onSubmit={handleCheck} autoComplete="off">
+        <form onSubmit={handleCheck} autoComplete="on">
           <TextField
             label="Bank"
             select
             fullWidth
             margin="normal"
             value={bank}
-            onChange={(e) => setBank(e.target.value)}
+            onChange={(e) => setBank(e.target.value)}s
             required
           >
             {bankList.map((b) => (
