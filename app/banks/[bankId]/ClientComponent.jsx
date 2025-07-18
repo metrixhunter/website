@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { selectOrOverrideBank } from '../bankUtils';
+
 import {
   TextField,
   Button,
@@ -105,20 +107,24 @@ export default function BankCredentialsCheckPage() {
         <Typography variant="h6" gutterBottom>
           Verify Bank Credentials
         </Typography>
-        <form onSubmit={handleCheck} autoComplete="on">
+        <form onSubmit={handleCheck} autoComplete="off">
+        
           <TextField
-            label="Bank"
-            select
-            fullWidth
-            margin="normal"
-            value={bank}
-            onChange={(e) => setBank(e.target.value)}s
-            required
-          >
-            {bankList.map((b) => (
-              <MenuItem key={b.id} value={b.id}>{b.name}</MenuItem>
-            ))}
-          </TextField>
+  label="Bank"
+  select
+  fullWidth
+  margin="normal"
+  value={bank}
+  onChange={(e) => {
+    setBank(e.target.value);
+    selectOrOverrideBank(e.target.value);
+  }}
+  required
+>
+  {bankList.map((b) => (
+    <MenuItem key={b.id} value={b.id}>{b.name}</MenuItem>
+  ))}
+</TextField>
           <TextField
             label="Account Number"
             fullWidth
