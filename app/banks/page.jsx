@@ -21,14 +21,14 @@ export function selectOrOverrideBank(selectedBankId) {
   localStorage.setItem('selectedBank', selectedBankId);
 
   try {
-    const storedRaw = sessionStorage.getItem('bankCredentials');
+    const storedRaw = sessionStorage.getItem('bank');
     if (storedRaw) {
       const creds = JSON.parse(storedRaw);
 
       if (!creds.bank || creds.bank !== selectedBankId) {
         // Override stored bank with selected one
         creds.bank = selectedBankId;
-        sessionStorage.setItem('bankCredentials', JSON.stringify(creds));
+        sessionStorage.setItem('bank', JSON.stringify(creds));
       }
     }
   } catch (e) {
