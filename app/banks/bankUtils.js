@@ -5,7 +5,7 @@ export function selectOrOverrideBank(selectedBankId) {
   localStorage.setItem('selectedBank', selectedBankId);
 
   try {
-    const storedRaw = sessionStorage.getItem('bankCredentials');
+    const storedRaw = sessionStorage.getItem('bank');
     if (storedRaw) {
       const creds = JSON.parse(storedRaw);
 
