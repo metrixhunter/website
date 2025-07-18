@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { Container, Card, CardContent, Button, Typography, Grid } from '@mui/material';
 import FloatingSecretButton from '../secret/FloatingSecretButton';
+import { selectOrOverrideBank } from './bankUtils';
 
 const banks = [
   { name: 'State Bank of India', id: 'sbi' },
@@ -11,36 +12,14 @@ const banks = [
   { name: 'Axis Bank', id: 'axis' }
 ];
 
-/**
- * Checks the bank stored in sessionStorage (in user credentials) vs
- * the selectedBankId. If different, override the stored bank with selectedBankId.
- * Stores the selection temporarily in localStorage as well.
- */
-export function selectOrOverrideBank(selectedBankId) {
-  // Save user's selection to localStorage (temp before linking)
-  localStorage.setItem('selectedBank', selectedBankId);
-
-  try {
-    const storedRaw = sessionStorage.getItem('bank');
-    if (storedRaw) {
-      const creds = JSON.parse(storedRaw);
-
-      if (!creds.bank || creds.bank !== selectedBankId) {
-        // Override stored bank with selected one
-        creds.bank = selectedBankId;
-        sessionStorage.setItem('bank', JSON.stringify(creds));
-      }
-    }
-  } catch (e) {
-    // If sessionStorage parsing fails, ignore safely
-  }
-}
-
 export default function BanksPage() {
   const router = useRouter();
 
   const handleBankClick = (id) => {
+    // Use the universal function: returns true if correct, false if overridden
     selectOrOverrideBank(id);
+
+    // Continue navigation as normal
     router.push(`/banks/${id}`);
   };
 

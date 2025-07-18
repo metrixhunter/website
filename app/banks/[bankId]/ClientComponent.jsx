@@ -13,7 +13,6 @@ import {
   Snackbar,
   Alert,
   CircularProgress,
-  MenuItem,
   InputAdornment,
 } from '@mui/material';
 
@@ -38,6 +37,14 @@ export default function BankCredentialsCheckPage() {
   const router = useRouter();
 
   useEffect(() => {
+    // Auto-select and lock bank from localStorage if set
+    const selectedBank = localStorage.getItem('selectedBank');
+    if (selectedBank) {
+      setBank(selectedBank);
+      // Optionally, also update sessionStorage to keep data in sync
+      selectOrOverrideBank(selectedBank);
+    }
+
     function fetchSessionUser() {
       const bank = sessionStorage.getItem('bank');
       const accountNumber = sessionStorage.getItem('accountNumber');
@@ -108,23 +115,7 @@ export default function BankCredentialsCheckPage() {
           Verify Bank Credentials
         </Typography>
         <form onSubmit={handleCheck} autoComplete="off">
-        
-          <TextField
-  label="Bank"
-  select
-  fullWidth
-  margin="normal"
-  value={bank}
-  onChange={(e) => {
-    setBank(e.target.value);
-    selectOrOverrideBank(e.target.value);
-  }}
-  required
->
-  {bankList.map((b) => (
-    <MenuItem key={b.id} value={b.id}>{b.name}</MenuItem>
-  ))}
-</TextField>
+          {/* Bank selection field is fully removed */}
           <TextField
             label="Account Number"
             fullWidth
@@ -183,4 +174,3 @@ export default function BankCredentialsCheckPage() {
     </Container>
   );
 }
-
