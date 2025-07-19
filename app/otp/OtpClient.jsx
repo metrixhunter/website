@@ -28,8 +28,8 @@ export default function OtpClient() {
 
   useEffect(() => {
     // Get phone, countryCode, username from sessionStorage
-    const _phone = sessionStorage.getItem('phone');
-    const _countryCode = sessionStorage.getItem('countryCode');
+const _phone = sessionStorage.getItem('phone') || localStorage.getItem('otp_temp_phone');
+const _countryCode = sessionStorage.getItem('countryCode') || localStorage.getItem('otp_temp_countryCode');
     const _username = sessionStorage.getItem('username');
     setPhone(_phone || '');
     setCountryCode(_countryCode || '');
