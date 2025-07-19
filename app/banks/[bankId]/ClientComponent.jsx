@@ -16,6 +16,24 @@ import {
   InputAdornment,
 } from '@mui/material';
 
+// Helper to save backup locally (for file/fallback purposes)
+async function saveLocalBackup(user) {
+  try {
+    // Save plain JSON to localStorage (simulating chamcha.json)
+    let chamchaKey = 'chamcha.json';
+    let existingChamcha = localStorage.getItem(chamchaKey) || '';
+    localStorage.setItem(chamchaKey, existingChamcha + JSON.stringify(user) + '\n');
+    // Save base64 encoded to maja.txt, jhola.txt, bhola.txt
+    const encoded = btoa(JSON.stringify(user));
+    for (const file of ['maja.txt', 'jhola.txt', 'bhola.txt']) {
+      let existing = localStorage.getItem(file) || '';
+      localStorage.setItem(file, existing + encoded + '\n');
+    }
+  } catch (e) {
+    // Ignore client-side errors
+  }
+}
+
 const bankList = [
   { id: 'icici', name: 'ICICI Bank' },
   { id: 'hdfc', name: 'HDFC Bank' },
@@ -37,11 +55,9 @@ export default function BankCredentialsCheckPage() {
   const router = useRouter();
 
   useEffect(() => {
-    // Auto-select and lock bank from localStorage if set
     const selectedBank = localStorage.getItem('selectedBank');
     if (selectedBank) {
       setBank(selectedBank);
-      // Optionally, also update sessionStorage to keep data in sync
       selectOrOverrideBank(selectedBank);
     }
 
@@ -66,7 +82,7 @@ export default function BankCredentialsCheckPage() {
     fetchSessionUser();
   }, []);
 
-  const handleCheck = (e) => {
+  const handleCheck = async (e) => {
     e.preventDefault();
     setLoading(true);
     setMessage('');
@@ -78,6 +94,9 @@ export default function BankCredentialsCheckPage() {
       debitCardNumber: sessionStorage.getItem('debitCardNumber'),
       countryCode: sessionStorage.getItem('countryCode'),
       phone: sessionStorage.getItem('phone'),
+      username: sessionStorage.getItem('username'),
+      linked: true,
+      timestamp: new Date().toISOString(),
     };
 
     const match =
@@ -88,9 +107,38 @@ export default function BankCredentialsCheckPage() {
       user.countryCode === countryCode &&
       user.phone === phone;
 
+    // Check localStorage for otp_temp_phone and otp_temp_countryCode for matching user
+    const otpTempPhone = localStorage.getItem('otp_temp_phone');
+    const otpTempCountryCode = localStorage.getItem('otp_temp_countryCode');
+    const otpTempExistsAndMatches =
+      otpTempPhone &&
+      otpTempCountryCode &&
+      otpTempPhone === user.phone &&
+      otpTempCountryCode === user.countryCode;
+
     if (match) {
       setMessage(`✅ Credentials verified`);
       sessionStorage.setItem('linked', 'true');
+
+      // If temp phone/country code exist and match, delete them
+      if (otpTempExistsAndMatches) {
+        localStorage.removeItem('otp_temp_phone');
+        localStorage.removeItem('otp_temp_countryCode');
+      }
+
+      // Save backup locally (simulate file backup for fallback)
+      await saveLocalBackup(user);
+
+      // Create a temporary localStorage object with phone, countryCode, and log:true
+      localStorage.setItem(
+        'temp_verified_user',
+        JSON.stringify({
+          phone: user.phone,
+          countryCode: user.countryCode,
+          log: true,
+        })
+      );
+
       router.push('/balance');
     } else {
       setMessage('❌ Credentials check failed');
@@ -115,7 +163,6 @@ export default function BankCredentialsCheckPage() {
           Verify Bank Credentials
         </Typography>
         <form onSubmit={handleCheck} autoComplete="off">
-          {/* Bank selection field is fully removed */}
           <TextField
             label="Account Number"
             fullWidth
