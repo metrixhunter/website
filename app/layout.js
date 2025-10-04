@@ -3,7 +3,19 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Container, Typography, Button, Box, Paper, Popover, Grid, List, ListItem, ListItemText, Divider } from '@mui/material';
+import {
+  Container,
+  Typography,
+  Button,
+  Box,
+  Paper,
+  Popover,
+  Grid,
+  List,
+  ListItem,
+  ListItemText,
+  Divider
+} from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import './globals.css';
 
@@ -14,6 +26,7 @@ const exploreOptions = [
   { label: "Safety", href: "/safety" },
   { label: "Investment", href: "/investment" },
 ];
+
 const calculatorOptions = [
   { label: "EMI Calculator" },
   { label: "Home Loan Calculator" },
@@ -22,7 +35,7 @@ const calculatorOptions = [
   { label: "Currency Converter" },
   { label: "My Tools & Calculators" },
 ];
-// Footer: main links should navigate, others are placeholders
+
 const footerLinks = [
   {
     title: "Explore",
@@ -65,7 +78,6 @@ const footerLinks = [
   }
 ];
 
-// Pages where the header and/or footer should appear
 const mainHeaderPages = [
   '/', '/budgeting', '/credit', '/safety', '/saving', '/investment'
 ];
@@ -73,28 +85,26 @@ const showFooterPages = mainHeaderPages;
 
 export default function Layout({ children }) {
   const pathname = usePathname();
-  // Show header on main and all finance pages
   const showHeader = mainHeaderPages.includes(pathname);
-  // Show footer on main and all finance pages
   const showFooter = showFooterPages.includes(pathname);
 
-  // Popover state for header
   const [exploreAnchor, setExploreAnchor] = useState(null);
   const [calcAnchor, setCalcAnchor] = useState(null);
 
   return (
     <html lang="en">
-      <body style={{ background: "#f5f8fa" }}>
-        {/* HEADER: on main + all finance pages */}
+      <body style={{ background: "#f5f8fa", margin: 0 }}>
+        {/* HEADER */}
         {showHeader && (
           <Box
             sx={{
               width: '100%',
-              px: 4,
+              px: { xs: 2, sm: 4 },
               py: 2,
               bgcolor: "#fff",
-              boxShadow: '0 2px 8px 0 #0001',
+              boxShadow: '0 2px 12px rgba(0,0,0,0.08)',
               display: 'flex',
+              flexDirection: { xs: 'column', md: 'row' },
               alignItems: 'center',
               justifyContent: 'space-between',
               position: 'sticky',
@@ -102,17 +112,17 @@ export default function Layout({ children }) {
               zIndex: 100
             }}
           >
-            <Box sx={{ display: "flex", alignItems: "center", gap: 3 }}>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 3, flexWrap: 'wrap' }}>
               <Typography variant="h5" sx={{
                 color: "#283593",
                 fontWeight: 700,
                 fontFamily: "inherit",
-                letterSpacing: 1,
-                mr: 3
+                letterSpacing: 1
               }}>
                 finedge
               </Typography>
-              <Box sx={{ display: "flex", gap: 1 }}>
+
+              <Box sx={{ display: "flex", gap: 1, flexWrap: 'wrap' }}>
                 <Button
                   color="primary"
                   endIcon={<ExpandMoreIcon />}
@@ -143,6 +153,7 @@ export default function Layout({ children }) {
                     )}
                   </Box>
                 </Popover>
+
                 <Button
                   color="primary"
                   endIcon={<ExpandMoreIcon />}
@@ -164,13 +175,14 @@ export default function Layout({ children }) {
                         key={opt.label}
                         fullWidth
                         sx={{ justifyContent: "flex-start", fontWeight: 500 }}
-                        disabled // not functional for now
+                        disabled
                       >
                         {opt.label}
                       </Button>
                     )}
                   </Box>
                 </Popover>
+
                 <Button color="primary" sx={{ textTransform: "none", fontWeight: 600 }} disabled>
                   Support
                 </Button>
@@ -179,103 +191,38 @@ export default function Layout({ children }) {
                 </Button>
               </Box>
             </Box>
+
             {pathname === '/' && (
-              <Box sx={{ display: "flex", gap: 1 }}>
+              <Box sx={{ display: "flex", gap: 1, mt: { xs: 2, md: 0 } }}>
                 <Button variant="text" href="/login" sx={{ fontWeight: 500 }}>LOGIN</Button>
                 <Button variant="contained" color="secondary" href="/signup" sx={{ fontWeight: 600 }}>SIGNUP</Button>
               </Box>
             )}
           </Box>
         )}
+
         {/* MAIN CONTENT */}
         <main style={{ minHeight: "70vh" }}>
-          {/* Only show main page content on /, else children */}
           {pathname === '/' ? <MainPageContent /> : children}
         </main>
-        {/* FOOTER: only on main, budgeting, credit, safety, saving, investment */}
+
+        {/* FOOTER */}
         {showFooter && <FooterLikeMicrosoft />}
       </body>
     </html>
   );
 }
 
-function MainPageContent() {
-  return (
-    <Box sx={{ position: "relative", minHeight: "70vh", px: 0 }}>
-      <Box sx={{
-        display: "flex",
-        flexDirection: { xs: "column", md: "row" },
-        alignItems: "flex-end",
-        justifyContent: "space-between",
-        width: "100%",
-        minHeight: 320,
-        px: { xs: 2, md: 8 },
-        pt: 6,
-        background: "url('/images/finance-hero.jpg') center/cover no-repeat, linear-gradient(to bottom, #e8eaf6 70%, #21243d 100%)",
-        position: "relative"
-      }}>
-        <Box sx={{ maxWidth: 480, pb: 5 }}>
-          <Typography variant="h3" sx={{ color: "white", fontWeight: 800, mb: 1, textAlign: "left" }}>
-            Welcome to FinEdge
-          </Typography>
-          <Typography variant="h6" color="grey.300" sx={{ mb: 2, textAlign: "left" }}>
-            Securely manage your finances and unlock your financial potential with ease.
-          </Typography>
-          <Paper elevation={3} sx={{ p: 3, mt: 2, textAlign: 'left', borderRadius: 3, background: "#fff8" }}>
-            <Typography paragraph sx={{ mb: 1 }}>
-              <b>FinEdge</b> is your all-in-one financial companion—helping you budget, save, invest, and protect your wealth.
-              Our platform is designed for everyone: whether you’re a student, professional, or retiree, you’ll find tools and guidance for smarter money management.
-            </Typography>
-            <Typography paragraph sx={{ mb: 1 }}>
-              <b>Specialty:</b> FinEdge is powered by an <b>AI assistant</b> that provides:
-            </Typography>
-            <Box component="ul" sx={{ pl: 4 }}>
-              <li>Personalized savings advice</li>
-              <li>Basic financial knowledge</li>
-              <li>Guidance on money transfers within FinEdge</li>
-              <li>Explanations of how money works</li>
-              <li>And more—tailored for your needs!</li>
-            </Box>
-            <Typography paragraph sx={{ mt: 2 }}>
-              <b>Get started by exploring our tools for budgeting, saving, investing, credit, and safety—from the header buttons above.</b>
-            </Typography>
-          </Paper>
-        </Box>
-        {/* Finance-themed image with dark tent/gradient at bottom */}
-        <Box sx={{ flex: 1, display: "flex", alignItems: "flex-end", justifyContent: "center" }}>
-          <Box sx={{
-            width: 0,
-            height: 0,
-            background: "",
-            borderRadius: 24,
-            boxShadow: '0 6px 36px #0002',
-            position: "relative",
-            overflow: "hidden"
-          }}>
-            {/* Dark tent effect */}
-            <Box sx={{
-              position: "absolute",
-              left: 0, bottom: 0, width: "100%", height: "60%",
-              background: "url('/images/finance-hero.jpg') center/cover no-repeat, linear-gradient(to bottom, #e8eaf6 70%, #21243d 100%)"
-            }} />
-          </Box>
-        </Box>
-      </Box>
-      {/* Optionally, add more images/features below */}
-    </Box>
-  );
-}
+function MainPageContent() { return ( <Box sx={{ position: "relative", minHeight: "70vh", px: 0 }}> <Box sx={{ display: "flex", flexDirection: { xs: "column", md: "row" }, alignItems: "flex-end", justifyContent: "space-between", width: "100%", minHeight: 320, px: { xs: 2, md: 8 }, pt: 6, background: "url('/images/finance-hero.jpg') center/cover no-repeat, linear-gradient(to bottom, #e8eaf6 70%, #21243d 100%)", position: "relative" }}> <Box sx={{ maxWidth: 480, pb: 5 }}> <Typography variant="h3" sx={{ color: "white", fontWeight: 800, mb: 1, textAlign: "left" }}> Welcome to FinEdge </Typography> <Typography variant="h6" color="grey.300" sx={{ mb: 2, textAlign: "left" }}> Securely manage your finances and unlock your financial potential with ease. </Typography> <Paper elevation={3} sx={{ p: 3, mt: 2, textAlign: 'left', borderRadius: 3, background: "#fff8" }}> <Typography paragraph sx={{ mb: 1 }}> <b>FinEdge</b> is your all-in-one financial companion—helping you budget, save, invest, and protect your wealth. Our platform is designed for everyone: whether you’re a student, professional, or retiree, you’ll find tools and guidance for smarter money management. </Typography> <Typography paragraph sx={{ mb: 1 }}> <b>Specialty:</b> FinEdge is powered by an <b>AI assistant</b> that provides: </Typography> <Box component="ul" sx={{ pl: 4 }}> <li>Personalized savings advice</li> <li>Basic financial knowledge</li> <li>Guidance on money transfers within FinEdge</li> <li>Explanations of how money works</li> <li>And more—tailored for your needs!</li> </Box> <Typography paragraph sx={{ mt: 2 }}> <b>Get started by exploring our tools for budgeting, saving, investing, credit, and safety—from the header buttons above.</b> </Typography> </Paper> </Box> {/* Finance-themed image with dark tent/gradient at bottom */} <Box sx={{ flex: 1, display: "flex", alignItems: "flex-end", justifyContent: "center" }}> <Box sx={{ width: 0, height: 0, background: "", borderRadius: 24, boxShadow: '0 6px 36px #0002', position: "relative", overflow: "hidden" }}> {/* Dark tent effect */} <Box sx={{ position: "absolute", left: 0, bottom: 0, width: "100%", height: "60%", background: "url('/images/finance-hero.jpg') center/cover no-repeat, linear-gradient(to bottom, #e8eaf6 70%, #21243d 100%)" }} /> </Box> </Box> </Box> {/* Optionally, add more images/features below */} </Box> ); }
 
-// Footer with navigation for main finance links
 function FooterLikeMicrosoft() {
   return (
     <Box sx={{
       bgcolor: "#f7f7f7",
       borderTop: "1px solid #e0e0e0",
-      mt: 8,
-      pb: 0
+      mt: 8
     }}>
-      <Container maxWidth="xl" sx={{ py: 4 }}>
+      <Container maxWidth="xl" sx={{ py: { xs: 4, md: 6 } }}>
         <Grid container spacing={4}>
           {footerLinks.map(section => (
             <Grid item xs={12} sm={6} md={3} key={section.title}>
@@ -312,9 +259,11 @@ function FooterLikeMicrosoft() {
         </Grid>
         <Divider sx={{ my: 3 }} />
         <Box sx={{
-          display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", py: 1, px: 2, fontSize: 14, color: "#888"
+          display: "flex", flexDirection: { xs: 'column', md: 'row' },
+          justifyContent: "space-between", alignItems: "center", gap: 2,
+          fontSize: 14, color: "#888"
         }}>
-          <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 2, flexWrap: 'wrap' }}>
             <span role="img" aria-label="globe">🌐</span> English (India)
             <Button variant="outlined" size="small" sx={{ mx: 1, p: 0.5, minWidth: 32, height: 28, fontSize: 13 }}>✓</Button>
             Your Privacy Choices
