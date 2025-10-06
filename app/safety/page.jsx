@@ -8,7 +8,7 @@ export default function SafetyPage() {
     <Box
       sx={{
         minHeight: "100vh",
-        background: "url('/images/finance-savings.webp') center/cover no-repeat, linear-gradient(to bottom, #e8eaf6 70%, #21243d 100%)",
+        background: "url('/images/finance-safety.webp') center/cover no-repeat, linear-gradient(to bottom, #e8eaf6 70%, #21243d 100%)",
         position: "relative"
       }}
     >
