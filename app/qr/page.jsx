@@ -1,6 +1,5 @@
 'use client';
-
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Container,
@@ -28,8 +27,10 @@ export default function QRCodePage() {
   const [loading, setLoading] = useState(true);
   const [scanning, setScanning] = useState(false);
   const [scannedData, setScannedData] = useState(null);
-  const [scanner, setScanner] = useState(null);
+  const videoRef = useRef(null);
+  const scannerRef = useRef(null);
 
+  // Load user info
   useEffect(() => {
     const username = sessionStorage.getItem('username');
     const bank = sessionStorage.getItem('bank');
@@ -39,36 +40,31 @@ export default function QRCodePage() {
       const userData = { username, bank, phone };
       setUser(userData);
       generateQR(userData);
-      return;
-    }
-
-    const item = localStorage.getItem('chamcha.json');
-    try {
-      const localUser = item ? JSON.parse(item) : {};
-      if (localUser.username && localUser.bank && localUser.accountNumber) {
-        setUser(localUser);
-        generateQR({
-          username: localUser.username,
-          bank: localUser.bank,
-          phone: localUser.accountNumber,
-        });
-      } else {
+    } else {
+      const item = localStorage.getItem('chamcha.json');
+      try {
+        const localUser = item ? JSON.parse(item) : {};
+        if (localUser.username && localUser.bank && localUser.accountNumber) {
+          setUser(localUser);
+          generateQR({
+            username: localUser.username,
+            bank: localUser.bank,
+            phone: localUser.accountNumber,
+          });
+        } else {
+          router.replace('/banks');
+        }
+      } catch {
         router.replace('/banks');
       }
-    } catch {
-      router.replace('/banks');
     }
   }, [router]);
 
+  // Generate QR
   async function generateQR(userData) {
     setLoading(true);
     try {
-      const qrContent = JSON.stringify({
-        username: userData.username,
-        bank: userData.bank,
-        phone: userData.phone,
-      });
-
+      const qrContent = JSON.stringify(userData);
       const url = await QRCode.toDataURL(qrContent);
       setQrDataUrl(url);
     } catch (err) {
@@ -78,6 +74,7 @@ export default function QRCodePage() {
     }
   }
 
+  // Download QR
   function handleDownload() {
     if (!qrDataUrl) return;
     const link = document.createElement('a');
@@ -86,70 +83,69 @@ export default function QRCodePage() {
     link.click();
   }
 
-  // --- QR SCANNER FUNCTIONS ---
+  // Start scanning
   const startScan = async () => {
-    setScanning(true);
-    setScannedData(null);
+    try {
+      setScanning(true);
+      setScannedData(null);
 
-    const videoElem = document.getElementById('qr-video');
-    if (!videoElem) return;
+      const videoElem = videoRef.current;
+      if (!videoElem) return console.error('Video element not found');
 
-    const qrScanner = new QrScanner(
-      videoElem,
-      (result) => {
-        setScannedData(result?.data || '');
-        qrScanner.stop();
-        setScanning(false);
-      },
-      { returnDetailedScanResult: true }
-    );
+      console.log('Requesting camera access...');
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'environment' },
+      });
+      videoElem.srcObject = stream;
+      await videoElem.play();
+      console.log('🎥 Video playing');
 
-    setScanner(qrScanner);
-    await qrScanner.start();
+      const qrScanner = new QrScanner(
+        videoElem,
+        result => {
+          console.log('✅ QR detected:', result);
+          if (result?.data) {
+            setScannedData(result.data);
+            stopScan();
+          }
+        },
+        { returnDetailedScanResult: true }
+      );
+
+      scannerRef.current = qrScanner;
+      await qrScanner.start();
+      console.log('🚀 Scanner started');
+    } catch (err) {
+      console.error('❌ Camera error:', err);
+      setScanning(false);
+    }
   };
 
+  // Stop scanning
   const stopScan = () => {
-    if (scanner) {
-      scanner.stop();
-      setScanner(null);
+    if (scannerRef.current) {
+      scannerRef.current.stop();
+      scannerRef.current.destroy();
+      scannerRef.current = null;
+    }
+    if (videoRef.current?.srcObject) {
+      videoRef.current.srcObject.getTracks().forEach(t => t.stop());
+      videoRef.current.srcObject = null;
     }
     setScanning(false);
   };
 
   return (
-    <Container
-      maxWidth="xs"
-      sx={{
-        minHeight: '100vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        background: 'linear-gradient(to bottom, #e3f2fd, #ffffff)',
-        py: 4,
-      }}
-    >
-      <Paper
-        elevation={4}
-        sx={{
-          width: '100%',
-          borderRadius: 4,
-          bgcolor: '#fff',
-          textAlign: 'center',
-          p: 3,
-        }}
-      >
+    <Container maxWidth="xs" sx={{ py: 4, minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <Paper elevation={4} sx={{ p: 3, borderRadius: 3, width: '100%', textAlign: 'center' }}>
         <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-          <IconButton
-            onClick={() => router.back()}
-            sx={{ mr: 1, color: 'text.secondary' }}
-          >
+          <IconButton onClick={() => router.back()} sx={{ mr: 1 }}>
             <ArrowBackIosNewIcon fontSize="small" />
           </IconButton>
           <Typography variant="h6" sx={{ fontWeight: 700, flexGrow: 1 }}>
             QR Code Center
           </Typography>
         </Box>
-
         <Divider sx={{ mb: 2 }} />
 
         {loading ? (
@@ -160,74 +156,32 @@ export default function QRCodePage() {
               <>
                 {user && qrDataUrl ? (
                   <>
-                    <Avatar
-                      sx={{
-                        bgcolor: '#1976d2',
-                        width: 60,
-                        height: 60,
-                        mx: 'auto',
-                        mb: 2,
-                      }}
-                    >
+                    <Avatar sx={{ bgcolor: '#1976d2', width: 60, height: 60, mx: 'auto', mb: 2 }}>
                       <AccountBalanceIcon fontSize="large" />
                     </Avatar>
-
                     <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 0.5 }}>
                       {user.bank}
                     </Typography>
                     <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                       {user.username} — {user.phone}
                     </Typography>
-
-                    <Box
-                      sx={{
-                        border: '2px solid #1976d2',
-                        borderRadius: 3,
-                        display: 'inline-block',
-                        p: 1.5,
-                        mb: 2,
-                      }}
-                    >
-                      <img
-                        src={qrDataUrl}
-                        alt="QR Code"
-                        style={{
-                          width: 220,
-                          height: 220,
-                        }}
-                      />
+                    <Box sx={{ border: '2px solid #1976d2', borderRadius: 3, display: 'inline-block', p: 1.5, mb: 2 }}>
+                      <img src={qrDataUrl} alt="QR Code" style={{ width: 220, height: 220 }} />
                     </Box>
-
                     <Stack spacing={1}>
-                      <Button
-                        variant="contained"
-                        startIcon={<DownloadIcon />}
-                        onClick={handleDownload}
-                        sx={{ borderRadius: 2, fontWeight: 500 }}
-                      >
+                      <Button variant="contained" startIcon={<DownloadIcon />} onClick={handleDownload}>
                         Download QR
                       </Button>
-                      <Button
-                        variant="outlined"
-                        startIcon={<QrCodeScannerIcon />}
-                        onClick={startScan}
-                        sx={{ borderRadius: 2 }}
-                      >
+                      <Button variant="outlined" startIcon={<QrCodeScannerIcon />} onClick={startScan}>
                         Scan QR Code
                       </Button>
-                      <Button
-                        variant="outlined"
-                        onClick={() => router.push('/banks')}
-                        sx={{ borderRadius: 2 }}
-                      >
+                      <Button variant="outlined" onClick={() => router.push('/banks')}>
                         Back to Banks
                       </Button>
                     </Stack>
                   </>
                 ) : (
-                  <Typography color="text.secondary">
-                    No user data found. Please link your bank account.
-                  </Typography>
+                  <Typography color="text.secondary">No user data found.</Typography>
                 )}
               </>
             ) : (
@@ -235,62 +189,18 @@ export default function QRCodePage() {
                 <Typography variant="subtitle1" sx={{ mb: 1 }}>
                   Scanning QR Code...
                 </Typography>
-                <Box
-                  sx={{
-                    width: '100%',
-                    border: '2px solid #1976d2',
-                    borderRadius: 3,
-                    overflow: 'hidden',
-                    mb: 2,
-                  }}
-                >
-                  <video id="qr-video" style={{ width: '100%' }} />
+                <Box sx={{ border: '2px solid #1976d2', borderRadius: 2, overflow: 'hidden', mb: 2 }}>
+                  <video ref={videoRef} style={{ width: '100%', backgroundColor: '#000' }} muted playsInline />
                 </Box>
-                <Button
-                  variant="outlined"
-                  color="error"
-                  onClick={stopScan}
-                  sx={{ borderRadius: 2 }}
-                >
+                <Button variant="outlined" color="error" onClick={stopScan}>
                   Stop Scan
                 </Button>
-
                 {scannedData && (
-                  <Box
-                    sx={{
-                      mt: 2,
-                      p: 2,
-                      bgcolor: '#f5f5f5',
-                      borderRadius: 2,
-                      textAlign: 'left',
-                    }}
-                  >
-                    <Typography variant="subtitle2" sx={{ mb: 0.5 }}>
-                      ✅ Scanned Data:
-                    </Typography>
+                  <Box sx={{ mt: 2, p: 2, bgcolor: '#f5f5f5', borderRadius: 2, textAlign: 'left' }}>
+                    <Typography variant="subtitle2">✅ Scanned Data:</Typography>
                     <Typography variant="body2" sx={{ wordBreak: 'break-word' }}>
                       {scannedData}
                     </Typography>
-                    {(() => {
-                      try {
-                        const parsed = JSON.parse(scannedData);
-                        return (
-                          <Box sx={{ mt: 1 }}>
-                            <Typography variant="body2">
-                              <strong>User:</strong> {parsed.username}
-                            </Typography>
-                            <Typography variant="body2">
-                              <strong>Bank:</strong> {parsed.bank}
-                            </Typography>
-                            <Typography variant="body2">
-                              <strong>Phone:</strong> {parsed.phone}
-                            </Typography>
-                          </Box>
-                        );
-                      } catch {
-                        return null;
-                      }
-                    })()}
                   </Box>
                 )}
               </>
