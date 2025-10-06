@@ -105,7 +105,7 @@ export default function DashboardPage() {
     { label: 'Receive Money', icon: <DoneAllIcon />, href: '/receive' },
     { label: 'Help & Support', icon: <HelpOutlineIcon />, href: '/support' },
     { label: 'Mobile Recharge', icon: <PhoneAndroidIcon />, href: '/recharge-mobile' },
-    { label: 'Electricity Bill', icon: <FlashOnIcon />, href: '/electricity' },
+    { label: 'Electricity Bill', icon: <FlashOnIcon />, href: '/electricit' },
     { label: 'Credit Card Home', icon: <CreditCardIcon />, href: '/credit-card' },
     { label: 'View All', icon: <CheckCircleOutlineIcon />, href: '/bills' },
     { label: 'Logout', icon: <LogoutIcon />, onClick: handleLogout },
