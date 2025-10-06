@@ -86,7 +86,7 @@ export default function DashboardPage() {
 
   // Navigation items
   const navItems = [
-    { label: 'Scan', icon: <QrCodeScannerIcon />, href: '/scan' },
+    { label: 'Scan', icon: <QrCodeScannerIcon />, href: '/qr' },
     { label: 'Send', icon: <PhoneAndroidIcon />, href: '/send-mobile' },
     { label: 'Home', icon: <AccountBalanceWalletIcon />, href: '/dashboard' },
     { label: 'Balance', icon: <HistoryIcon />, href: '/balance' },
@@ -95,8 +95,8 @@ export default function DashboardPage() {
 
   // Sidebar links
   const sidebarLinks = [
-    { label: 'Dashboard', icon: <MenuIcon />, href: '/dashboard' },
-    { label: 'Scan & Pay', icon: <QrCodeScannerIcon />, href: '/scan' },
+    
+    { label: 'Scan & Pay', icon: <QrCodeScannerIcon />, href: '/qr' },
     { label: 'To Mobile/Contact', icon: <PhoneAndroidIcon />, href: '/send-mobile' },
     { label: 'To Bank Account', icon: <AccountBalanceIcon />, href: '/send-bank' },
     { label: 'To Self Account', icon: <PersonIcon />, href: '/send-self' },
