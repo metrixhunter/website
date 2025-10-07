@@ -1,10 +1,4 @@
-MONGODB_URI=mongodb+srv://diamondlakshya1976:finege@cluster0.kbmvg2e.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0
-TWILIO_ACCOUNT_SID=AC5eb2ad25eeaa3e17521b1dba0aea32da
-TWILIO_AUTH_TOKEN=86f3bfdf31a92830eeb75b8478a37944
-TWILIO_VERIFY_SERVICE_SID=VA5eb2ad25eeaa3e17521b1dba0aea32da
-UPSTASH_REDIS_URL=redis://default:9CaOIFlOAL1DPZnqiRjetyLh579jSpbV@redis-12513.c264.ap-south-1-1.ec2.redns.redis-cloud.com:12513
-OPENAI_API_KEY=OPENAI_API_KEY=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
-FIREBASE_SERVICE_ACCOUNT_KEY={
+{
   "type": "service_account",
   "project_id": "helos-8d260",
   "private_key_id": "277e9b8b3fc77476847ea5eb1c2231dd0467f028",
@@ -17,10 +11,3 @@ FIREBASE_SERVICE_ACCOUNT_KEY={
   "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/firebase-adminsdk-fbsvc%40helos-8d260.iam.gserviceaccount.com",
   "universe_domain": "googleapis.com"
 }
-NEXT_PUBLIC_FIREBASE_API_KEY=AIzaSyBLYHfSdkiYnv5Apcaq4mLRgPM58prSZok
-NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=helos-8d260.firebaseapp.com
-NEXT_PUBLIC_FIREBASE_PROJECT_ID=helos-8d260
-NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=helos-8d260.firebasestorage.app
-NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=382946317833
-NEXT_PUBLIC_FIREBASE_APP_ID=1:382946317833:web:f4dc2126a2251e9c7c8ad8
-NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID=G-8J85PSR28M

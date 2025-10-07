@@ -17,7 +17,8 @@ import {
   Box,
 } from '@mui/material';
 import FinEdgeLogo from '@/app/components/FinEdgeLogo';
-import { encrypt } from '@/app/utils/encryption';
+import { db } from '@/firebase/firebaseClient'; // ✅ Firestore client
+import { collection, doc, setDoc } from 'firebase/firestore';
 
 const countryCodes = [
   { code: '+91', label: 'India (+91)' },
@@ -32,71 +33,15 @@ const countryCodes = [
 
 const banks = ['ICICI', 'AXIS', 'SBI', 'HDFC'];
 
-// Helper for saving to public/user_data via the browser (append)
-async function saveToPublicFolder(filename, value) {
-  try {
-    let key = `public_user_data_${filename}`;
-    let existing = localStorage.getItem(key) || '';
-    localStorage.setItem(key, existing + value + '\n');
-  } catch (err) {
-    // Ignore
-  }
-}
-
-// Helper: Simulate a Redis user entry in localStorage
-function saveToRedisLike(phone, userObj) {
-  try {
-    localStorage.setItem(`user:${phone}`, JSON.stringify(userObj));
-  } catch {}
-}
-
-// Helper: Generate random bank, account number, debit card number
-function getRandomBank() {
-  return banks[Math.floor(Math.random() * banks.length)];
-}
-function getRandomAccountNumber() {
-  return Math.floor(1000000000 + Math.random() * 9000000000).toString();
-}
-function getRandomDebitCardNumber() {
-  return Math.floor(1000000000000000 + Math.random() * 9000000000000000).toString();
-}
-
-// Helper: Try Redis API if Mongo fails
-async function tryRedisSignup(userData, setSuccess, setErrorMsg, setOpenSnackbar, redirectToOtp) {
-  try {
-    // Try a dedicated redis signup endpoint (if you have one)
-    const res = await fetch('/api/auth/redis-signup', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(userData),
-    });
-    const data = await res.json();
-
-    if (!res.ok || !data.success) {
-      throw new Error(data.message || 'Redis signup failed');
-    }
-
-    // Save to sessionStorage for OTP and later flow
-    sessionStorage.setItem('username', userData.username);
-    sessionStorage.setItem('phone', userData.phone);
-    sessionStorage.setItem('countryCode', userData.countryCode);
-    if (data.bank) sessionStorage.setItem('bank', data.bank);
-    if (data.accountNumber) sessionStorage.setItem('accountNumber', data.accountNumber);
-    if (data.debitCardNumber) sessionStorage.setItem('debitCardNumber', data.debitCardNumber);
-
-    // --- NEW: Save number with country code to localStorage for OTP page ---
-    localStorage.setItem('otp_temp_phone', userData.phone);
-    localStorage.setItem('otp_temp_countryCode', userData.countryCode);
-
-    setSuccess(true);
-    setErrorMsg('Signed up using Redis fallback! Please enter the OTP sent to your phone.');
-    setOpenSnackbar(true);
-    setTimeout(redirectToOtp, 900);
-    return true;
-  } catch (err) {
-    return false;
-  }
-}
+// Random generators
+const getRandomBank = () => banks[Math.floor(Math.random() * banks.length)];
+const getRandomAccountNumber = () =>
+  Math.floor(1000000000 + Math.random() * 9000000000).toString();
+const getRandomDebitCardNumber = () =>
+  Math.floor(1000000000000000 + Math.random() * 9000000000000000).toString();
+const getRandomPin = () => Math.floor(1000 + Math.random() * 9000).toString();
+const getRandomBankBalance = () =>
+  Math.floor(10000 + Math.random() * 70000); // 10k–80k rupees
 
 export default function SignupPage() {
   const [username, setUsername] = useState('');
@@ -122,97 +67,88 @@ export default function SignupPage() {
       setOpenSnackbar(true);
       return;
     }
-    if (!countryCode) {
-      setErrorMsg('Please select your country code.');
-      setOpenSnackbar(true);
-      return;
-    }
 
-    // If signup is saved locally, assign random bank/account/card
+    const bank = getRandomBank();
+    const accountNumber = getRandomAccountNumber();
+    const debitCardNumber = getRandomDebitCardNumber();
+    const pin = getRandomPin();
+    const bankBalance = getRandomBankBalance();
+
+    // Default UPI balance = 0
     const userData = {
       username,
       phone,
       countryCode,
-      bank: getRandomBank(),
-      accountNumber: getRandomAccountNumber(),
-      debitCardNumber: getRandomDebitCardNumber(),
-      linked: false,
-      timestamp: new Date().toISOString(),
+      upiBalance: 0,
+      bank,
+      bankDetails: {
+        accountNumber,
+        debitCardNumber,
+        pin,
+        balance: bankBalance,
+      },
+      transactions: [],
+      createdAt: new Date().toISOString(),
     };
 
     try {
-      // Try MongoDB-backed signup
+      // ✅ Save to MongoDB (for main identity)
       const res = await fetch('/api/auth/signup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, phone, countryCode }),
       });
+
       const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Signup failed.');
 
-      if (!res.ok) {
-        // If error is MongoDB unreachable, try Redis
-        if (data.message && data.message.toLowerCase().includes('mongo')) {
-          const redisSuccess = await tryRedisSignup(userData, setSuccess, setErrorMsg, setOpenSnackbar, redirectToOtp);
-          if (redisSuccess) return;
-        }
-        setErrorMsg(data.message || 'Signup failed');
-        setOpenSnackbar(true);
-      } else {
-        setSuccess(true);
-        // Save all data to sessionStorage for OTP and later flow
-        sessionStorage.setItem('username', username);
-        sessionStorage.setItem('phone', phone);
-        sessionStorage.setItem('countryCode', countryCode);
-        if (data.bank) sessionStorage.setItem('bank', data.bank);
-        if (data.accountNumber) sessionStorage.setItem('accountNumber', data.accountNumber);
-        if (data.debitCardNumber) sessionStorage.setItem('debitCardNumber', data.debitCardNumber);
+      // ✅ Save to Firestore
+    await setDoc(doc(db, 'users', phone), userData);
 
-        // --- NEW: Save number with country code to localStorage for OTP page ---
-        localStorage.setItem('otp_temp_phone', phone);
-        localStorage.setItem('otp_temp_countryCode', countryCode);
 
-        setOpenSnackbar(true);
-        setTimeout(redirectToOtp, 900);
-      }
+
+      setSuccess(true);
+      setErrorMsg('');
+      setOpenSnackbar(true);
+
+      // Save basic info to sessionStorage
+      sessionStorage.setItem('username', username);
+      sessionStorage.setItem('phone', phone);
+      sessionStorage.setItem('countryCode', countryCode);
+      console.log("✅ Firestore write successful, redirecting to OTP...");
+
+      // Redirect to OTP page
+       setTimeout(() => {
+      router.push('/otp?redirect=/accountfound');
+    }, 2200);
     } catch (err) {
-      // Server unreachable — fallback: save locally to both localStorage and to keys simulating public/user_data and redis
-      try {
-        // Save to simulated Redis
-        saveToRedisLike(phone, userData);
-
-        // Save local version for "mongo"
-        localStorage.setItem('chamcha.json', JSON.stringify(userData));
-        localStorage.setItem('maja.txt', encrypt({ username, phone, countryCode }));
-        localStorage.setItem('jhola.txt', encrypt({ username, phone, countryCode }));
-        localStorage.setItem('bhola.txt', encrypt({ username, phone, countryCode, timestamp: userData.timestamp }));
-
-        // Save to public folder simulation (localStorage-based fallback)
-        await saveToPublicFolder('chamcha.json', JSON.stringify(userData));
-        await saveToPublicFolder('maja.txt', encrypt({ username, phone, countryCode }));
-        await saveToPublicFolder('jhola.txt', encrypt({ username, phone, countryCode }));
-        await saveToPublicFolder('bhola.txt', encrypt({ username, phone, countryCode, timestamp: userData.timestamp }));
-
-        // --- NEW: Save number with country code to localStorage for OTP page ---
-        localStorage.setItem('otp_temp_phone', phone);
-        localStorage.setItem('otp_temp_countryCode', countryCode);
-
-        setSuccess(true);
-        setErrorMsg('Server unreachable. Data saved locally and in Redis simulation.');
-        setOpenSnackbar(true);
-        setTimeout(redirectToOtp, 1200);
-      } catch (error) {
-        setErrorMsg('Failed to save data locally.');
-        setOpenSnackbar(true);
-      }
+      console.error('Signup error:', err);
+      setErrorMsg(err.message || 'Signup failed. Please try again.');
+      setOpenSnackbar(true);
     }
   };
 
   return (
-    <Container maxWidth="xs" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
-      <Paper elevation={3} style={{ padding: '2rem', width: '100%', textAlign: 'center' }}>
+    <Container
+      maxWidth="xs"
+      sx={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        height: '100vh',
+      }}
+    >
+      <Paper elevation={3} sx={{ p: 3, width: '100%', textAlign: 'center' }}>
         <FinEdgeLogo />
-        <Typography variant="h5" gutterBottom>Sign Up</Typography>
-        {success && <Alert severity="success">Signed up successfully! Please enter the OTP sent to your phone.</Alert>}
+        <Typography variant="h5" gutterBottom>
+          Sign Up
+        </Typography>
+
+        {success && (
+          <Alert severity="success">
+            Signed up successfully! Redirecting to OTP page...
+          </Alert>
+        )}
 
         <TextField
           label="Username"
@@ -230,20 +166,23 @@ export default function SignupPage() {
               id="country-code"
               value={countryCode}
               label="Code"
-              onChange={e => setCountryCode(e.target.value)}
+              onChange={(e) => setCountryCode(e.target.value)}
               size="small"
             >
               {countryCodes.map((option) => (
-                <MenuItem value={option.code} key={option.code}>{option.label}</MenuItem>
+                <MenuItem value={option.code} key={option.code}>
+                  {option.label}
+                </MenuItem>
               ))}
             </Select>
           </FormControl>
+
           <TextField
             label="Phone Number"
             fullWidth
             margin="normal"
             value={phone}
-            onChange={(e) => setPhone(e.target.value.replace(/\D/, ''))}
+            onChange={(e) => setPhone(e.target.value.replace(/\D/g, ''))}
             sx={{ flex: 1 }}
           />
         </Box>
@@ -252,18 +191,21 @@ export default function SignupPage() {
           variant="contained"
           color="primary"
           fullWidth
-          style={{ marginTop: '1rem' }}
+          sx={{ mt: 2 }}
           onClick={handleSignup}
           disabled={success}
         >
           Sign Up
         </Button>
       </Paper>
-      <Snackbar open={openSnackbar} autoHideDuration={4000} onClose={() => setOpenSnackbar(false)}>
-        <Alert severity={success ? "success" : "error"}>
-          {success
-            ? "Signed up successfully! Redirecting to OTP page..."
-            : errorMsg}
+
+      <Snackbar
+        open={openSnackbar}
+        autoHideDuration={4000}
+        onClose={() => setOpenSnackbar(false)}
+      >
+        <Alert severity={success ? 'success' : 'error'}>
+          {success ? 'Signed up successfully!' : errorMsg}
         </Alert>
       </Snackbar>
     </Container>
