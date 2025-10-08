@@ -95,17 +95,17 @@ export default function DashboardPage() {
 
   // Sidebar links
   const sidebarLinks = [
-    
+    { label: 'Dashboard', icon: <MenuIcon />, href: '/dashboard' },
     { label: 'Scan & Pay', icon: <QrCodeScannerIcon />, href: '/qr' },
     { label: 'To Mobile/Contact', icon: <PhoneAndroidIcon />, href: '/send-mobile' },
-    { label: 'To Bank Account', icon: <AccountBalanceIcon />, href: '/send-bank' },
+    { label: 'To Bank Account', icon: <AccountBalanceIcon />, href: '/banks' },
     { label: 'To Self Account', icon: <PersonIcon />, href: '/send-self' },
     { label: 'Balance & History', icon: <HistoryIcon />, href: '/balance' },
     { label: 'Check Balance', icon: <AccountBalanceWalletIcon />, href: '/balance' },
     { label: 'Receive Money', icon: <DoneAllIcon />, href: '/receive' },
     { label: 'Help & Support', icon: <HelpOutlineIcon />, href: '/support' },
     { label: 'Mobile Recharge', icon: <PhoneAndroidIcon />, href: '/recharge-mobile' },
-    { label: 'Electricity Bill', icon: <FlashOnIcon />, href: '/electricit' },
+    { label: 'Electricity Bill', icon: <FlashOnIcon />, href: '/electricity' },
     { label: 'Credit Card Home', icon: <CreditCardIcon />, href: '/credit-card' },
     { label: 'View All', icon: <CheckCircleOutlineIcon />, href: '/bills' },
     { label: 'Logout', icon: <LogoutIcon />, onClick: handleLogout },
