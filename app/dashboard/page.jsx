@@ -95,7 +95,6 @@ export default function DashboardPage() {
 
   // Sidebar links
   const sidebarLinks = [
-    { label: 'Dashboard', icon: <MenuIcon />, href: '/dashboard' },
     { label: 'Scan & Pay', icon: <QrCodeScannerIcon />, href: '/qr' },
     { label: 'To Mobile/Contact', icon: <PhoneAndroidIcon />, href: '/send-mobile' },
     { label: 'To Bank Account', icon: <AccountBalanceIcon />, href: '/banks' },
