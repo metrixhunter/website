@@ -20,7 +20,6 @@ import {
   Snackbar,
   Alert
 } from '@mui/material';
-import { ChatBubbleLeftRightIcon } from 'lucide-react';
 
 export default function SupportPage() {
   const [category, setCategory] = useState('');
@@ -97,7 +96,7 @@ export default function SupportPage() {
     <Container maxWidth="sm" sx={{ mt: 6 }}>
       <Paper elevation={4} sx={{ p: 4, borderRadius: '16px' }}>
         <Box display="flex" alignItems="center" justifyContent="center" mb={2}>
-          <ChatBubbleLeftRightIcon size={28} color="#1976d2" />
+          
           <Typography variant="h5" sx={{ ml: 1, fontWeight: 'bold' }}>
             FinEdge Support Center
           </Typography>
@@ -201,3 +200,4 @@ export default function SupportPage() {
     </Container>
   );
 }
+
