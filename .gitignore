@@ -39,3 +39,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Firebase service account (private key)
+helos-8d260-277e9b8b3fc7.json
