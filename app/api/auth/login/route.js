@@ -4,59 +4,42 @@ import { createClient } from 'redis';
 import { promises as fs } from 'fs';
 import path from 'path';
 
-// Helper to decode base64
+// Helper: decode base64 lines
 function decodeBase64(str) {
   return Buffer.from(str, 'base64').toString('utf-8');
 }
 
-// Try to find user in chamcha.json (public/user_data)
+// Read from chamcha.json (backup)
 async function findUserInChamcha({ username, phone, countryCode }) {
   const chamchaPath = path.join(process.cwd(), 'public', 'user_data', 'chamcha.json');
   try {
     const data = await fs.readFile(chamchaPath, 'utf8');
-    // Each line is a JSON object
     const lines = data.split('\n').filter(Boolean);
     for (const line of lines) {
-      let user;
-      try {
-        user = JSON.parse(line);
-      } catch { continue; }
-      if (
-        user.username === username &&
-        user.phone === phone &&
-        user.countryCode === countryCode
-      ) {
+      const user = JSON.parse(line);
+      if (user.username === username && user.phone === phone && user.countryCode === countryCode)
         return user;
-      }
     }
   } catch {}
   return null;
 }
 
-// Try to find user in an encrypted .txt file (public/user_data)
+// Read from encrypted txt backups
 async function findUserInEncryptedTxt({ username, phone, countryCode }, file) {
   const txtPath = path.join(process.cwd(), 'public', 'user_data', file);
   try {
     const data = await fs.readFile(txtPath, 'utf8');
     const lines = data.split('\n').filter(Boolean);
     for (const line of lines) {
-      let user;
-      try {
-        user = JSON.parse(decodeBase64(line));
-      } catch { continue; }
-      if (
-        user.username === username &&
-        user.phone === phone &&
-        user.countryCode === countryCode
-      ) {
-        return user;
-      }
+      const decoded = JSON.parse(decodeBase64(line));
+      if (decoded.username === username && decoded.phone === phone && decoded.countryCode === countryCode)
+        return decoded;
     }
   } catch {}
   return null;
 }
 
-// Try to get user from Redis as fallback if Mongo fails
+// Redis fallback
 async function findUserInRedis({ username, phone, countryCode }) {
   const redisUrl = process.env.UPSTASH_REDIS_URL || process.env.REDIS_URL;
   if (!redisUrl) return null;
@@ -67,72 +50,67 @@ async function findUserInRedis({ username, phone, countryCode }) {
     const userStr = await client.get(key);
     if (userStr) {
       const user = JSON.parse(userStr);
-      if (
-        user.username === username &&
-        user.phone === phone &&
-        user.countryCode === countryCode
-      ) {
+      if (user.username === username && user.phone === phone && user.countryCode === countryCode)
         return user;
-      }
     }
   } catch {}
   try { await client.disconnect(); } catch {}
   return null;
 }
 
+// Main login route
 export async function POST(req) {
   try {
     const { username, phone, countryCode } = await req.json();
+    if (!username || !phone || !countryCode)
+      return NextResponse.json({ success: false, message: 'Missing required fields.' }, { status: 400 });
 
-    // 1. Try database (Mongo) first
     let user = null;
-    let triedMongo = false;
+    let mongoTried = false;
+
+    // 1️⃣ MongoDB
     try {
       await dbConnect();
       user = await getUser({ username, phone, countryCode });
-      triedMongo = true;
-    } catch (err) {
-      // MongoDB connect failed, fall through to Redis
-    }
+      mongoTried = true;
+    } catch {}
 
-    // 2. If not found or Mongo failed, try Redis
-    if (!user) {
-      user = await findUserInRedis({ username, phone, countryCode });
-    }
+    // 2️⃣ Redis
+    if (!user) user = await findUserInRedis({ username, phone, countryCode });
 
-    // 3. If not found, try backups in public/user_data/
+    // 3️⃣ chamcha.json
+    if (!user) user = await findUserInChamcha({ username, phone, countryCode });
+
+    // 4️⃣ encrypted backups
     if (!user) {
-      // Try chamcha.json
-      user = await findUserInChamcha({ username, phone, countryCode });
-    }
-    if (!user) {
-      // Try encrypted text files
       for (const file of ['maja.txt', 'jhola.txt', 'bhola.txt']) {
         user = await findUserInEncryptedTxt({ username, phone, countryCode }, file);
         if (user) break;
       }
     }
 
-    // 4. Not found anywhere
+    // 5️⃣ User not found
     if (!user) {
-      let reasonMsg = triedMongo ? 'User not found.' : 'MongoDB unreachable and user not found.';
-      return NextResponse.json(
-        { success: false, message: reasonMsg },
-        { status: 404 }
-      );
+      const msg = mongoTried ? 'User not found.' : 'MongoDB unreachable and user not found.';
+      return NextResponse.json({ success: false, message: msg }, { status: 404 });
     }
 
-    // 5. return user info
-    return NextResponse.json({
+    // 6️⃣ Normalize
+    const responseUser = {
       success: true,
       username: user.username,
       phone: user.phone,
       countryCode: user.countryCode,
-      bank: user.bank,
-      accountNumber: user.accountNumber,
-      debitCardNumber: user.debitCardNumber,
-      linked: user.linked,
-    });
+      upiBalance: user.upiBalance || 0,
+      banks: user.banks || [],
+      transactions: user.transactions || [],
+      comments: user.comments || [],
+      linked: user.linked || false,
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt,
+    };
+
+    return NextResponse.json(responseUser, { status: 200 });
   } catch (err) {
     return NextResponse.json(
       { success: false, message: 'Login failed.', error: err.message },

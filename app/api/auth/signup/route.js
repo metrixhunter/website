@@ -6,56 +6,62 @@ import { createClient } from 'redis';
 
 const banks = ['SBI', 'HDFC', 'ICICI', 'AXIS'];
 
+// --- Random Generators ---
 function generateAccountNumber() {
   return Math.floor(1000000000 + Math.random() * 9000000000).toString();
 }
 function generateDebitCardNumber() {
   return Math.floor(1000000000000000 + Math.random() * 9000000000000000).toString();
 }
+function generatePin() {
+  return Math.floor(1000 + Math.random() * 9000).toString();
+}
+function generateBalance() {
+  return Math.floor(10000 + Math.random() * 90000);
+}
 
-// Helper to save user in Redis
+// --- Redis helpers ---
 async function saveUserInRedis(userObj) {
   const redisUrl = process.env.UPSTASH_REDIS_URL || process.env.REDIS_URL;
   if (!redisUrl) return;
   const client = createClient({ url: redisUrl });
   try {
     await client.connect();
-    const key = `user:${userObj.phone}`;
-    await client.set(key, JSON.stringify(userObj));
-    await client.disconnect();
+    await client.set(`user:${userObj.phone}`, JSON.stringify(userObj));
   } catch (e) {
+    console.error('Redis save failed:', e);
+  } finally {
     try { await client.disconnect(); } catch {}
-    // Ignore
   }
 }
 
-// Helper to find user in Redis
 async function findUserInRedis({ phone, countryCode }) {
   const redisUrl = process.env.UPSTASH_REDIS_URL || process.env.REDIS_URL;
   if (!redisUrl) return null;
   const client = createClient({ url: redisUrl });
   try {
     await client.connect();
-    const key = `user:${phone}`;
-    const userStr = await client.get(key);
-    await client.disconnect();
-    if (userStr) {
-      const user = JSON.parse(userStr);
-      if (user.countryCode === countryCode) {
-        return user;
-      }
+    const data = await client.get(`user:${phone}`);
+    if (data) {
+      const user = JSON.parse(data);
+      if (user.countryCode === countryCode) return user;
     }
   } catch (e) {
+    console.error('Redis find failed:', e);
+  } finally {
     try { await client.disconnect(); } catch {}
-    // Ignore
   }
   return null;
 }
 
+// --- MAIN SIGNUP ROUTE ---
 export async function POST(req) {
   const { username, phone, countryCode } = await req.json();
 
-  // Try MongoDB first
+  if (!username || !phone || !countryCode)
+    return NextResponse.json({ success: false, message: 'All fields are required.' }, { status: 400 });
+
+  // --- Try MongoDB first ---
   let mongoOk = false;
   let existing = null;
   try {
@@ -63,82 +69,82 @@ export async function POST(req) {
     mongoOk = true;
     existing = await User.findOne({ phone, countryCode });
   } catch (err) {
-    // MongoDB connection failed
+    console.warn('MongoDB not reachable, switching to Redis fallback');
   }
 
-  // If Mongo is up, check for existing user
+  // --- If user already exists ---
   if (mongoOk && existing) {
     return NextResponse.json({
       success: false,
-      message: 'User already exists.',
-      username: existing.username,
-      bank: existing.bank,
-      countryCode: existing.countryCode,
-      accountNumber: existing.accountNumber,
-      debitCardNumber: existing.debitCardNumber,
-      linked: existing.linked
+      message: 'User already exists',
+      user: existing
     }, { status: 409 });
   }
 
-  // If Mongo is down, try Redis for existing user
+  // --- Check Redis fallback if Mongo is down ---
   if (!mongoOk) {
     const redisUser = await findUserInRedis({ phone, countryCode });
     if (redisUser) {
       return NextResponse.json({
         success: false,
-        message: 'User already exists.',
-        username: redisUser.username,
-        bank: redisUser.bank,
-        countryCode: redisUser.countryCode,
-        accountNumber: redisUser.accountNumber,
-        debitCardNumber: redisUser.debitCardNumber,
-        linked: redisUser.linked
+        message: 'User already exists (cached)',
+        user: redisUser
       }, { status: 409 });
     }
   }
 
-  // Assign random bank and numbers
-  const bank = banks[Math.floor(Math.random() * banks.length)];
-  const accountNumber = generateAccountNumber();
-  const debitCardNumber = generateDebitCardNumber();
-
+  // --- Create user object ---
+  const randomBank = banks[Math.floor(Math.random() * banks.length)];
   const userObj = {
     username,
     phone,
     countryCode,
-    bank,
-    accountNumber,
-    debitCardNumber,
+    upiBalance: 0,
+    banks: [
+      {
+        bankName: randomBank,
+        bankDetails: {
+          accountNumber: generateAccountNumber(),
+          debitCardNumber: generateDebitCardNumber(),
+          pin: generatePin(),
+          balance: generateBalance()
+        }
+      }
+    ],
+    transactions: [],
+    comments: [],
     linked: false,
     createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
   };
 
-  // Try saving to Mongo
+  // --- Save to Mongo if possible ---
   if (mongoOk) {
     try {
-      const user = new User(userObj);
-      await user.save();
+      const newUser = new User(userObj);
+      await newUser.save();
     } catch (e) {
-      // Ignore DB errors for backup fallback
+      console.error('Mongo save failed:', e);
     }
   } else {
-    // Save to Redis as fallback
+    // Save to Redis if Mongo down
     await saveUserInRedis(userObj);
   }
 
-  // Only do file backups if in development
+  // --- Save local backup (only in dev mode) ---
   if (process.env.NODE_ENV === 'development') {
-    await saveUserBackup(userObj);
-    // Do NOT call saveToFiles or write to disk in production/serverless!
+    try {
+      await saveUserBackup(userObj);
+    } catch (err) {
+      console.error('Local backup failed:', err);
+    }
   }
 
+  // --- Final success response ---
   return NextResponse.json({
     success: true,
-    username,
-    bank,
-    countryCode,
-    accountNumber,
-    debitCardNumber,
-    linked: false
-  });
+    message: 'User registered successfully',
+    user: userObj
+  }, { status: 201 });
 }
+
