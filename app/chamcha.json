@@ -25,3 +25,4 @@
 {"username":"lokhande","phone":"8764587224","countryCode":"+91","bank":"SBI","accountNumber":"9852853437","debitCardNumber":"8912001731068603","linked":false,"createdAt":"2025-10-07T16:40:43.739Z"}
 {"username":"loca","phone":"9875645678","countryCode":"+91","bank":"AXIS","accountNumber":"9979105264","debitCardNumber":"3280446608641328","linked":false,"createdAt":"2025-10-07T16:55:38.768Z"}
 {"username":"laca","phone":"6547856789","countryCode":"+91","bank":"AXIS","accountNumber":"9426961007","debitCardNumber":"3875978519480579","linked":false,"createdAt":"2025-10-07T17:00:56.747Z"}
+{"username":"shubh","phone":"6304578965","countryCode":"+91","upiBalance":0,"banks":[{"bankName":"HDFC","bankDetails":{"accountNumber":"9921322655","debitCardNumber":"1434947565867446","pin":"6732","balance":37191}}],"transactions":[],"comments":[],"linked":false,"createdAt":"2025-10-10T10:56:04.747Z","updatedAt":"2025-10-10T10:56:04.747Z"}
