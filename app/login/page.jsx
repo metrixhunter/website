@@ -52,6 +52,11 @@ export default function LoginPage() {
       sessionStorage.setItem('username', data.username);
       sessionStorage.setItem('phone', data.phone);
       sessionStorage.setItem('countryCode', data.countryCode);
+      sessionStorage.setItem('upiBalance', data.upiBalance || '0');
+      sessionStorage.setItem('banks', JSON.stringify(data.banks || []));
+      sessionStorage.setItem('transactions', JSON.stringify(data.transactions || []));
+      sessionStorage.setItem('comments', JSON.stringify(data.comments || []));
+      sessionStorage.setItem('linked', data.linked ? 'true' : 'false');
       router.push('/otp');
     } catch (err) {
       setMessage(err.message || 'Login failed');

@@ -63,25 +63,21 @@ export async function POST(req) {
   try {
     const { username, phone, countryCode } = await req.json();
     if (!username || !phone || !countryCode)
-      return NextResponse.json({ success: false, message: 'Missing required fields.' }, { status: 400 });
+      return NextResponse.json({ success: false, message: 'Missing fields.' }, { status: 400 });
 
     let user = null;
     let mongoTried = false;
 
-    // 1️⃣ MongoDB
     try {
       await dbConnect();
       user = await getUser({ username, phone, countryCode });
       mongoTried = true;
-    } catch {}
+    } catch (err) {
+      console.error('MongoDB error', err.message);
+    }
 
-    // 2️⃣ Redis
     if (!user) user = await findUserInRedis({ username, phone, countryCode });
-
-    // 3️⃣ chamcha.json
     if (!user) user = await findUserInChamcha({ username, phone, countryCode });
-
-    // 4️⃣ encrypted backups
     if (!user) {
       for (const file of ['maja.txt', 'jhola.txt', 'bhola.txt']) {
         user = await findUserInEncryptedTxt({ username, phone, countryCode }, file);
@@ -89,22 +85,20 @@ export async function POST(req) {
       }
     }
 
-    // 5️⃣ User not found
     if (!user) {
       const msg = mongoTried ? 'User not found.' : 'MongoDB unreachable and user not found.';
       return NextResponse.json({ success: false, message: msg }, { status: 404 });
     }
 
-    // 6️⃣ Normalize
     const responseUser = {
       success: true,
       username: user.username,
       phone: user.phone,
       countryCode: user.countryCode,
       upiBalance: user.upiBalance || 0,
-      banks: user.banks || [],
-      transactions: user.transactions || [],
-      comments: user.comments || [],
+      banks: Array.isArray(user.banks) ? user.banks : [],
+      transactions: Array.isArray(user.transactions) ? user.transactions : [],
+      comments: Array.isArray(user.comments) ? user.comments : [],
       linked: user.linked || false,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
@@ -112,6 +106,7 @@ export async function POST(req) {
 
     return NextResponse.json(responseUser, { status: 200 });
   } catch (err) {
+    console.error('Login POST error:', err);
     return NextResponse.json(
       { success: false, message: 'Login failed.', error: err.message },
       { status: 500 }

@@ -26,7 +26,7 @@ import QrCodeScannerIcon from '@mui/icons-material/QrCodeScanner';
 export default function QRCodePage() {
   const router = useRouter();
   const [user, setUser] = useState(null);
-  const [selectedIndex, setSelectedIndex] = useState(0); // bank or UPI (-1)
+  const [selectedIndex, setSelectedIndex] = useState(-1); // -1 = UPI, 0+ = banks
   const [qrDataUrl, setQrDataUrl] = useState(null);
   const [loading, setLoading] = useState(true);
   const [scanning, setScanning] = useState(false);
@@ -34,21 +34,23 @@ export default function QRCodePage() {
   const videoRef = useRef(null);
   const scannerRef = useRef(null);
 
+  // Load user data from sessionStorage
   useEffect(() => {
-    const item = localStorage.getItem('chamcha.json');
-    if (item) {
-      try {
-        const localUser = JSON.parse(item);
-        if (localUser.username && Array.isArray(localUser.banks)) {
-          setUser(localUser);
-          // default: UPI if exists else first bank
-          setSelectedIndex(localUser.upiBalance > 0 ? -1 : 0);
-          generateQR(localUser, localUser.upiBalance > 0 ? -1 : 0);
-          return;
-        }
-      } catch {}
+    if (typeof window === 'undefined') return;
+
+    const username = sessionStorage.getItem('username');
+    const phone = sessionStorage.getItem('phone');
+    const countryCode = sessionStorage.getItem('countryCode');
+    const upiBalance = Number(sessionStorage.getItem('upiBalance')) || 0;
+    const banks = JSON.parse(sessionStorage.getItem('banks') || '[]');
+
+    if (!username) {
+      router.replace('/banks'); // redirect if not logged in
+      return;
     }
-    router.replace('/banks');
+
+    setUser({ username, phone, countryCode, upiBalance, banks });
+    generateQR({ username, phone, countryCode, upiBalance, banks }, banks.length > 0 ? 0 : -1);
   }, [router]);
 
   const generateQR = async (userData, index) => {
@@ -59,10 +61,15 @@ export default function QRCodePage() {
         payload = { username: userData.username, upiBalance: userData.upiBalance };
       } else {
         const bank = userData.banks[index];
-        payload = { username: userData.username, bank: bank.bankName, phone: bank.bankDetails.accountNumber };
+        payload = {
+          username: userData.username,
+          bank: bank.bankName,
+          accountNumber: bank.bankDetails.accountNumber,
+        };
       }
       const url = await QRCode.toDataURL(JSON.stringify(payload));
       setQrDataUrl(url);
+      setSelectedIndex(index);
     } catch (err) {
       console.error('QR generation failed:', err);
     } finally {
@@ -71,7 +78,7 @@ export default function QRCodePage() {
   };
 
   const handleDownload = () => {
-    if (!qrDataUrl) return;
+    if (!qrDataUrl || !user) return;
     const label = selectedIndex === -1 ? 'UPI' : user.banks[selectedIndex].bankName;
     const link = document.createElement('a');
     link.href = qrDataUrl;
@@ -121,7 +128,6 @@ export default function QRCodePage() {
 
   const handleSelectChange = (e) => {
     const index = e.target.value;
-    setSelectedIndex(index);
     generateQR(user, index);
   };
 
