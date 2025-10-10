@@ -233,5 +233,5 @@ export default function ElectricityBillPage() {
       </Snackbar>
     </Container>
   );
-}'use client';
+}
 
