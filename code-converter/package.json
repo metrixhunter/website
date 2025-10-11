@@ -1,7 +1,8 @@
 {
   "name": "code-converter",
-  "main": "expo-router/entry",
   "version": "1.0.0",
+  "main": "expo-router/entry",
+  "type": "module",
   "scripts": {
     "start": "expo start",
     "reset-project": "node ./scripts/reset-project.js",
@@ -16,6 +17,7 @@
     "@react-navigation/elements": "^2.6.3",
     "@react-navigation/native": "^7.1.8",
     "axios": "^1.12.2",
+    "dotenv": "^17.2.3",
     "expo": "~54.0.13",
     "expo-constants": "~18.0.9",
     "expo-font": "~14.0.9",
@@ -47,3 +49,4 @@
   },
   "private": true
 }
+

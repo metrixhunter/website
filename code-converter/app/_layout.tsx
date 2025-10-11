@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import * as React from "react";
+import { useState } from "react";
 import { View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet, Dimensions, Alert } from "react-native";
 
 const Layout: React.FC = () => {
@@ -14,7 +15,7 @@ const Layout: React.FC = () => {
     if (!inputCode.trim()) return;
     try {
       setLoading(true);
-      const response = await fetch("https://finedgeofficial.netlify.app/api/code-converter/route.ts", {
+      const response = await fetch("http://localhost:5000/api/code-converter", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
