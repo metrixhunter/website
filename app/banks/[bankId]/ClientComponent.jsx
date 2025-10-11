@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { selectOrOverrideBank } from '../bankUtils';
-
 import {
   TextField,
   Button,
@@ -16,146 +15,170 @@ import {
   InputAdornment,
 } from '@mui/material';
 
-// Helper to save backup locally (for file/fallback purposes)
-async function saveLocalBackup(user) {
-  try {
-    let chamchaKey = 'chamcha.json';
-    let existingChamcha = localStorage.getItem(chamchaKey) || '';
-    localStorage.setItem(chamchaKey, existingChamcha + JSON.stringify(user) + '\n');
-
-    const encoded = btoa(JSON.stringify(user));
-    for (const file of ['maja.txt', 'jhola.txt', 'bhola.txt']) {
-      let existing = localStorage.getItem(file) || '';
-      localStorage.setItem(file, existing + encoded + '\n');
-    }
-  } catch (e) {
-    // Ignore client-side errors
-  }
-}
-
 export default function BankCredentialsCheckPage() {
   const [bank, setBank] = useState('');
   const [accountNumber, setAccountNumber] = useState('');
   const [debitCard, setDebitCard] = useState('');
+  const [pin, setPin] = useState('');
   const [countryCode, setCountryCode] = useState('');
   const [phone, setPhone] = useState('');
+  const [linked, setLinked] = useState(false);
   const [message, setMessage] = useState('');
   const [openSnackbar, setOpenSnackbar] = useState(false);
   const [loading, setLoading] = useState(false);
   const [checked, setChecked] = useState(false);
+  const [bankBalance, setBankBalance] = useState(0);
 
   const router = useRouter();
 
   useEffect(() => {
+    // Load selected bank
     const selectedBank = localStorage.getItem('selectedBank');
     if (selectedBank) {
       setBank(selectedBank);
       selectOrOverrideBank(selectedBank);
     }
 
-    // ✅ Only load bank, not sensitive credentials
-    const sessionBank = sessionStorage.getItem('bank') || '';
-    setBank(sessionBank);
+    // Load session data
+    const sessionLinked = sessionStorage.getItem('linked') === 'true';
+    const sessionBank = sessionStorage.getItem('bank');
+    const sessionPhone = sessionStorage.getItem('phone');
+    const sessionCountryCode = sessionStorage.getItem('countryCode');
 
-    setMessage(sessionBank ? 'Bank selected, please enter your credentials' : 'Please select your bank');
-    setOpenSnackbar(true);
+    if (sessionBank) setBank(sessionBank);
+    if (sessionLinked) setLinked(true);
+    if (sessionPhone) setPhone(sessionPhone);
+    if (sessionCountryCode) setCountryCode(sessionCountryCode);
+
+    // Try to get bank balance from banks array
+    const banks = JSON.parse(sessionStorage.getItem('banks') || '[]');
+    const bankObj = banks.find(b => b.bankName === sessionBank || b.bankDetails?.accountNumber === accountNumber);
+
+    if (bankObj) {
+      const balance = bankObj?.bankDetails?.balance || 0;
+      setBankBalance(balance);
+    }
+
+    setMessage(sessionLinked ? 'Bank already linked. Enter PIN to view balance.' : 'Please enter your bank credentials');
     setChecked(true);
   }, []);
 
-  const handleCheck = async (e) => {
+  const handleVerify = async (e) => {
     e.preventDefault();
     setLoading(true);
     setMessage('');
     setOpenSnackbar(false);
 
-    const user = {
-      bank,
-      accountNumber,
-      debitCardNumber: debitCard,
-      countryCode,
-      phone,
-      username: sessionStorage.getItem('username'),
-      linked: true,
-      timestamp: new Date().toISOString(),
-    };
+    const banks = JSON.parse(sessionStorage.getItem('banks') || '[]');
 
-    const match =
-      user.bank &&
-      user.accountNumber &&
-      user.debitCardNumber &&
-      user.countryCode &&
-      user.phone;
-
-    const otpTempPhone = localStorage.getItem('otp_temp_phone');
-    const otpTempCountryCode = localStorage.getItem('otp_temp_countryCode');
-    const otpTempExistsAndMatches =
-      otpTempPhone &&
-      otpTempCountryCode &&
-      otpTempPhone === user.phone &&
-      otpTempCountryCode === user.countryCode;
-
-    if (match) {
-      setMessage(`✅ Credentials verified`);
-      sessionStorage.setItem('linked', 'true');
-
-      if (otpTempExistsAndMatches) {
-        localStorage.removeItem('otp_temp_phone');
-        localStorage.removeItem('otp_temp_countryCode');
+    // Already linked: only verify PIN + phone + countryCode
+    if (linked) {
+      const storedPin = localStorage.getItem(`${bank}_pin`);
+      if (pin === storedPin && phone && countryCode) {
+        // Read balance from banks array instead of sessionStorage
+        const bankObj = banks.find(b => b.bankName === bank || b.bankDetails?.accountNumber === accountNumber);
+        const balance = bankObj?.bankDetails?.balance || 0;
+        setBankBalance(balance);
+        setMessage(`✅ PIN verified! Bank balance: ₹${balance}`);
+      } else {
+        setMessage('❌ Incorrect PIN or phone/country code');
       }
-
-      await saveLocalBackup(user);
-
-      localStorage.setItem(
-        'temp_verified_user',
-        JSON.stringify({
-          phone: user.phone,
-          countryCode: user.countryCode,
-          log: true,
-        })
-      );
-
-      router.push('/balance');
-    } else {
-      setMessage('❌ Credentials check failed');
+      setOpenSnackbar(true);
+      setLoading(false);
+      return;
     }
 
+    // First-time verification
+    if (!accountNumber || !debitCard || !phone || !countryCode) {
+      setMessage('❌ Please fill all required fields');
+      setOpenSnackbar(true);
+      setLoading(false);
+      return;
+    }
+
+    // Simulate successful verification (replace with real API call)
+    const verifiedBalance = Math.floor(Math.random() * 50000); // demo balance
+
+    // Update banks array with new balance
+    const updatedBanks = banks.map(b => {
+      if (b.bankDetails?.accountNumber === accountNumber) {
+        return {
+          ...b,
+          bankDetails: {
+            ...b.bankDetails,
+            balance: verifiedBalance,
+          },
+        };
+      }
+      return b;
+    });
+
+    sessionStorage.setItem('linked', 'true');
+    sessionStorage.setItem('bank', bank);
+    sessionStorage.setItem('banks', JSON.stringify(updatedBanks));
+
+    // Save PIN locally for future quick verification
+    localStorage.setItem(`${bank}_pin`, pin);
+
+    setLinked(true);
+    setBankBalance(verifiedBalance);
+    setMessage(`✅ Bank linked successfully! Balance: ₹${verifiedBalance}`);
     setOpenSnackbar(true);
     setLoading(false);
   };
 
   if (!checked) {
     return (
-      <Container maxWidth="xs" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
+      <Container
+        maxWidth="xs"
+        style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}
+      >
         <CircularProgress />
       </Container>
     );
   }
 
   return (
-    <Container maxWidth="xs" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
+    <Container
+      maxWidth="xs"
+      style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}
+    >
       <Paper elevation={3} style={{ padding: '2rem', width: '100%', textAlign: 'center' }}>
         <Typography variant="h6" gutterBottom>
-          Verify Bank Credentials
+          {linked ? 'Enter PIN to Access Bank' : 'Verify Bank Credentials'}
         </Typography>
         <Typography variant="subtitle2" gutterBottom color="textSecondary">
           Bank: {bank || 'Not selected'}
         </Typography>
-        <form onSubmit={handleCheck} autoComplete="off">
+        <form onSubmit={handleVerify} autoComplete="off">
+          {!linked && (
+            <>
+              <TextField
+                label="Account Number"
+                fullWidth
+                margin="normal"
+                value={accountNumber}
+                onChange={(e) => setAccountNumber(e.target.value)}
+                required
+              />
+              <TextField
+                label="Debit Card Number"
+                fullWidth
+                margin="normal"
+                value={debitCard}
+                onChange={(e) => setDebitCard(e.target.value)}
+                required
+              />
+            </>
+          )}
           <TextField
-            label="Account Number"
+            label="PIN"
             fullWidth
             margin="normal"
-            value={accountNumber}
-            onChange={(e) => setAccountNumber(e.target.value)}
+            value={pin}
+            onChange={(e) => setPin(e.target.value)}
             required
-          />
-          <TextField
-            label="Debit Card Number"
-            fullWidth
-            margin="normal"
-            value={debitCard}
-            onChange={(e) => setDebitCard(e.target.value)}
-            required
+            type="password"
           />
           <TextField
             label="Country Code"
@@ -189,10 +212,16 @@ export default function BankCredentialsCheckPage() {
             style={{ marginTop: '1rem' }}
             disabled={loading}
           >
-            {loading ? <CircularProgress size={24} /> : 'Verify Credentials'}
+            {loading ? <CircularProgress size={24} /> : linked ? 'Verify PIN' : 'Verify Credentials'}
           </Button>
         </form>
+        {linked && bankBalance > 0 && (
+          <Typography variant="subtitle1" color="primary" sx={{ mt: 2 }}>
+            Current Balance: ₹{bankBalance}
+          </Typography>
+        )}
       </Paper>
+
       <Snackbar open={openSnackbar} autoHideDuration={3000} onClose={() => setOpenSnackbar(false)}>
         <Alert severity={message.includes('✅') ? 'success' : 'error'}>{message}</Alert>
       </Snackbar>

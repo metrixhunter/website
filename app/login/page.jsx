@@ -54,9 +54,24 @@ export default function LoginPage() {
       sessionStorage.setItem('countryCode', data.countryCode);
       sessionStorage.setItem('upiBalance', data.upiBalance || '0');
       sessionStorage.setItem('banks', JSON.stringify(data.banks || []));
+
       sessionStorage.setItem('transactions', JSON.stringify(data.transactions || []));
       sessionStorage.setItem('comments', JSON.stringify(data.comments || []));
       sessionStorage.setItem('linked', data.linked ? 'true' : 'false');
+      /*sessionStorage.setItem('bank', data.bank || '');
+      sessionStorage.setItem('accountNumber', data.accountNumber || '');
+      sessionStorage.setItem('debitCard', data.debitCard || '');
+      sessionStorage.setItem('pin', data.pin || '');
+      sessionStorage.setItem('phone', data.phone || '');
+      sessionStorage.setItem('countryCode', data.countryCode || '');
+      sessionStorage.setItem('upiBalance', data.upiBalance || '0');
+      sessionStorage.setItem('banks', JSON.stringify(data.banks || []));
+      sessionStorage.setItem('transactions', JSON.stringify(data.transactions || []));
+      sessionStorage.setItem('comments', JSON.stringify(data.comments || []));
+      sessionStorage.setItem('linked', data.linked ? 'true' : 'false');
+      sessionStorage.setItem('bank', data.bank || '');*/
+
+
       router.push('/otp');
     } catch (err) {
       setMessage(err.message || 'Login failed');
