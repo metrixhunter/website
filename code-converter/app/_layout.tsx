@@ -14,7 +14,7 @@ const Layout: React.FC = () => {
     if (!inputCode.trim()) return;
     try {
       setLoading(true);
-      const response = await fetch("pages/api/code-converter.ts", {
+      const response = await fetch("https://finedgeofficial.netlify.app/api/code-converter/route.ts", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

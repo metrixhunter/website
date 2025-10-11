@@ -1,12 +1,13 @@
-// app/api/code-converter/route.ts
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(req: NextRequest) {
-  const body = await req.json();
-  const { code, inputLang, targetLang, mode } = body;
+  const { code, inputLang, targetLang, mode } = await req.json();
 
   if (!code || !inputLang || !mode) {
-    return NextResponse.json({ error: "Missing code, inputLang or mode" }, { status: 400 });
+    return NextResponse.json(
+      { error: "Missing parameters" },
+      { status: 400, headers: { "Access-Control-Allow-Origin": "*" } }
+    );
   }
 
   const prompt =
@@ -30,5 +31,24 @@ export async function POST(req: NextRequest) {
   });
 
   const data = await response.json();
-  return NextResponse.json({ result: data.choices[0].message.content });
+
+  // Return response with CORS header
+  return NextResponse.json(
+    { result: data.choices[0].message.content },
+    { headers: { "Access-Control-Allow-Origin": "*" } }
+  );
+}
+
+// Handle preflight request (OPTIONS)
+export async function OPTIONS() {
+  return NextResponse.json(
+    {},
+    {
+      headers: {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "POST, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type, Authorization",
+      },
+    }
+  );
 }
